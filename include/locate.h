@@ -1,6 +1,7 @@
 #include "common.h"
 #include "list.h"
 #include "hashmap.h"
+
 #define READ_BUFFER_SIZE 1024*21*5
 
 struct log
