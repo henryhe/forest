@@ -7,7 +7,11 @@
 
 //返回日志来源，包含“&_x=”的日志判定为来源于定位，加上‘&’是因为cormorant日志里有些日志
 //包含“lu=”的即判定为cormorant行为日志来的信息
-int getsource(char *line) 
+
+//用语统计的结构
+static struct stat s;
+
+int logtype(char *line) 
 {
 	char *p = line;
 	while (*p != '\0') 
@@ -98,6 +102,7 @@ void freelog(struct log *log)
 	free(log);
 }
 
+//初始化log结构
 struct log *log_init(){
 	struct log* log = (struct log *)malloc(sizeof(struct log));
 	log->paramp = hmap_create();
@@ -221,7 +226,7 @@ struct log *corlog(char *line)
 				start = ++ end;
 				continue;
 			}
-            int len = end - start;
+            int len = end - start -1;//此处-1是因为cor日志的分隔符号为逗号+空格
             value = (char *)malloc(len + 1);
             memcpy(value, start, len);
             *(value + len) = '\0';
@@ -252,19 +257,137 @@ struct log *corlog(char *line)
 	return log;
 }
 
-struct log* getlog(char *line, int source)
+struct log* parseline(char *line, int logtype)
 {	
-	if (source == 1)
+	if (logtype == 1)
 		return tklog(line);
-	if (source == 2) 
+	if (logtype == 2) 
 		return corlog(line);
 	return NULL;
 }
 
-void deallog(struct log *log)
+//根据vs过滤如果是安卓版本，且低于2.30.20110526A版本的被过滤掉
+int vsfilted(char *vs)
 {
-	//hmap_print( log-> paramp);
+    if (vs == NULL)
+        return FALSE;
+    int len = strlen(vs);
+    if (*(vs + len - 1) != 'A')
+        return FALSE;
+    if (strcmp(vs,"2.30.20110526A") == -1)
+        return TRUE;
+    return FALSE;
+}
 
+//根据m的值去除掉测试数据
+int mfilted(char *m){
+    if (m == NULL)
+        return FALSE;
+    if (strcmp(m,"TigerMapTest") == 0 || strcmp(m,"chomsky") == 0)
+        return TRUE;
+    return FALSE;
+}
+//根据公共参数过滤日志
+int pubfilted(char *vs, char *m)
+{
+    if (vsfilted(vs) || mfilted(m))    
+        return TRUE;
+}
+
+
+//根据输入的mcc，mnc等拼接基站id，不做任何其他处理，所以mnc = 01
+//的情况需要提前去掉0
+char *catkey(char *mcc, char *mnc, char *lac, char *ci)
+{
+    int mcc_len = strlen(mcc);
+    int mnc_len = strlen(mnc);
+    int lac_len = strlen(lac);
+    int ci_len = strlen(ci);
+    char *key = (char *)malloc(mcc_len + mnc_len + lac_len + ci_len + 3 + 1);
+    int offset = 0;
+    memcpy(key,mcc,mcc_len);
+    offset += mcc_len;
+    *(key + offset) = '.';
+    offset++;
+    memcpy(key + offset,mnc,mnc_len);
+    offset += mnc_len;
+    *(key + offset) = '.';
+    offset++;
+    memcpy(key + offset,lac,lac_len);
+    offset += lac_len;
+    *(key + offset) = '.';
+    offset++;
+    memcpy(key + offset,ci,ci_len);
+    offset += ci_len;
+    *(key + offset) = '\0';
+    return key;
+}
+
+//计算basekey，如果参数不全，或者不符合日志要求
+char *getbasekey(char *mcc, char *mnc, char *lac, char *ci, char *vs, char *m)
+{
+    if (mcc == NULL || mnc == NULL || lac == NULL || ci == NULL)
+        return NULL;
+    int i_mcc = atoi(mcc);
+    int i_mnc = atoi(mnc);
+    int i_lac = atoi(lac);
+    int i_ci = atoi(ci);
+    if( i_mcc <= 0 || i_mnc < 0 || i_lac <= 0 || i_ci <= 0 
+        || i_lac == 65535 || i_ci == 65535)
+       return NULL;
+    //此处的最大值只是遵从原来的代码，获取java中short和int的最大值
+    if( i_mcc > 32767 || i_mnc > 32767 || i_lac > 2147483647 || i_ci > 2147483647)
+        return NULL;
+    int vslen = strlen(vs);
+    if(i_mcc == 460 && (i_mnc == 3 || i_mnc == 5) && *(vs + vslen -1) == 'A' 
+       &&  (strcmp(vs,"3.02.20120325A") == -1 ||(strcmp(vs,"3.03.20120329A")==0 && strcmp(m,"ANDqQFUnusual-SF") == 0)))
+        return NULL;
+    //拼接基站key
+    //由于mnc提交上来的参数有些有0所以重新生成
+    char *f_mnc = (char *)malloc(strlen(mnc));
+    sprintf(f_mnc,"%d",i_mnc);
+    char *basekey = catkey(mcc,f_mnc,lac,ci);
+    free(f_mnc);
+    s.basekeynum++;
+    return basekey;
+}
+
+//得到来自tk日志的结果
+void dealtklog(char *basekey,  char *mcc, char *mnc, struct log *log)
+{
+    if (basekey != NULL)
+    {
+        struct record r;
+        r->time = log->time;
+
+    }    
+}
+
+void dealcorlog(){
+
+}
+
+//对有效日志进行处理
+void deallog(struct log *log, int type, char *line)
+{
+    char *vs = hmap_get(log->paramp, "vs");
+    char *m = hmap_get(log->paramp,"m");
+    char *e = hmap_get(log->paramp,"e");
+    if (pubfilted(vs,m))
+        return;
+    //获取每条日志里不同记录的公共数据
+    //basekey在getbasekey中申请的空间，将在record中free
+    if (type == 1)
+    {
+        char *mcc = hmap_get(log->paramp, "mcc");
+        char *mnc = hmap_get(log->paramp, "mnc");
+        char *lac = hmap_get(log->paramp, "lac");
+        char *ci = hmap_get(log->paramp, "ci");
+        char *basekey = getbasekey(mcc,mnc,lac,ci,vs,m);
+        dealtklog(basekey,mcc,mnc,log);
+    }else{
+        dealcorlog();
+    }
 }
 
 
@@ -277,28 +400,23 @@ char *getnowtime()
 	return asctime(timeinfo);
 }
 
-void main(int argc, char *argv[])
-{	
-	int logtype = 0;
+void parselog()
+{
 	printf("start: read log: %s",getnowtime());
-	long int line_num = 0, log_num = 0;
 	char *line = (char *)malloc(READ_BUFFER_SIZE);
-//	FILE *fp = fopen("tk_locate_log_optimus_test","r+");
-//	FILE *fp = fopen("sample1","r+");
+//	FILE *fp = fopen("test","r+");
 	while (fgets(line,READ_BUFFER_SIZE,stdin) != NULL )
 //	while(fgets(line, READ_BUFFER_SIZE, fp) != NULL)
 	{
-		line_num++;
-		//printf("%ld    ",line_num);
-		int source = getsource(line);
-		if(source > 0)
+		s.linenum++;
+		int type = logtype(line);
+		if(type > 0)
 		{
-	//		printf("%s",line);
-			struct log *log = getlog(line, source);
+			struct log *log = parseline(line, type);
 			if(log != NULL)
 			{	
-				log_num++;
-				deallog(log);
+				s.lognum++;
+				deallog(log,type,line);
 				freelog(log);
 			}
 		}
@@ -306,6 +424,14 @@ void main(int argc, char *argv[])
 //	fclose(fp);
 	free(line);
 	printf("end: read log  :%s",getnowtime());
-	printf("read lines : %ld\n",line_num);
-	printf("read logs : %ld\n",log_num);
+	printf("read lines : %ld\n",s.linenum);
+	printf("read logs : %ld\n",s.lognum);
+	printf("read basekeys : %ld\n",s.basekeynum);
+
+}
+
+
+void main(int argc, char *argv[])
+{
+    parselog();    
 }

@@ -1,10 +1,7 @@
-tk_locate_log_optimus_test
-corm_locate_log_inception_test
 .gitignore
 test*
-sample*
-corm.log*
 tk_locate*
 logs/
-source/
-target/
+build/
+cscope*
+t/
