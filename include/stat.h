@@ -20,5 +20,7 @@ struct stat
     long linenum;//读入日志的行数
     long lognum;//有效的日志数目
     long basekeynum;//获取的主基站数目
+    long nkeynum;//获取的周边基站数目
+    long wkeynum;//获取的wifi基站数目
 };
 

@@ -257,6 +257,31 @@ struct log *corlog(char *line)
 	return log;
 }
 
+int isnum(char *s){
+    int count = 0;
+    while (*s != '\0')
+    {
+        if (*s == '.' || *s == ' ')
+        {
+            s++;
+            continue;
+        }
+
+        if( *s == '0' || *s == '1' || *s == '2' || *s == '3' ||
+            *s == '4' || *s == '5' || *s == '6' || *s == '7' || 
+            *s == '8' || *s == '9')
+           {
+            s++;
+            count ++;
+            continue;
+           }
+        s++;
+     }
+    if (count > 0 )
+        return TRUE;
+    return FALSE;
+}
+
 struct log* parseline(char *line, int logtype)
 {	
 	if (logtype == 1)
@@ -323,7 +348,9 @@ char *catkey(char *mcc, char *mnc, char *lac, char *ci)
     return key;
 }
 
-//计算basekey，如果参数不全，或者不符合日志要求
+/**计算basekey，如果参数不全，或者不符合日志要求，返回NULL
+ * 返回的basekey是新申请的空间需要free
+ */
 char *getbasekey(char *mcc, char *mnc, char *lac, char *ci, char *vs, char *m)
 {
     if (mcc == NULL || mnc == NULL || lac == NULL || ci == NULL)
@@ -352,27 +379,131 @@ char *getbasekey(char *mcc, char *mnc, char *lac, char *ci, char *vs, char *m)
     return basekey;
 }
 
+/**拼接计算周边基站的key，由于主基站已经坐过基本参数的判断，所以
+ *此处只需要判断lac和ci是否合法，然后返回key，返回的key是重新申请
+ *的空间，需要free
+ */
+char *getnkey(char *mcc, char *mnc, char *lac, char *ci)
+{
+    int i_mnc = atoi(mnc);
+    int i_lac = atoi(lac);
+    int i_ci = atoi(ci);
+    if ( i_lac <= 0 || i_ci <= 0 || i_lac == 65536 || 
+         i_ci == 65536 || i_lac > 2147483647 || i_ci > 2147483647)
+        return NULL;
+    char *f_mnc = (char *)malloc(strlen(mnc));
+    sprintf(f_mnc,"%d",i_mnc);
+    char *nkey = catkey(mcc,f_mnc,lac,ci);
+    free(f_mnc);
+    s.nkeynum++;
+    return nkey;
+
+}
+
+/**检查wifi的key是否合法
+ *
+ */
+int iswkey(char *key)
+{
+    if (strlen(key) != 17)
+        return FALSE;
+    if (strcmp(key,"00:00:00:00:00:00") == 0 || strcmp(key,"ff:ff:ff:ff:ff:ff") == 0)
+        return FALSE;
+    return TRUE;
+}
+
+//根据gps信息判断是否要过滤掉
+int gpsfilted(double x,double y,double p){
+    if (x >= 180.0 || x <= -180.0 || y >= 90.0 || y <= -90.0 || p > 500)
+         return TRUE;
+    if (x > -0.000001 && x < 0.000001)
+         return TRUE;
+    if (y > -0.000001 && y < 0.000001)
+          return TRUE;
+    return FALSE;
+}
+
+void printR(struct record r){
+ // printf("%s ", r.key);
+//    printf("%ld ", r.time);
+//    printf("%lf %lf %lf ", r.x, r.y, r.p);
+//    printf("%d ", r.type);
+//    printf("%s\n", r.e);
+}
+
 //得到来自tk日志的结果
 void dealtklog(char *basekey,  char *mcc, char *mnc, struct log *log)
 {
+    char *_x = hmap_get(log->paramp,"_x");
+    char *_y = hmap_get(log->paramp,"_y");
+    char *_p = hmap_get(log->paramp,"_pt");
+    char *_e = hmap_get(log->paramp,"e");
+    if(_x == NULL || _y == NULL || _p == NULL || _e == NULL)
+        return;
+    if(!isnum(_x) || !isnum(_y) || !isnum(_p) )
+        return;
+    double x = strtod(_x,NULL);
+    double y = strtod(_y,NULL);
+    double p = strtod(_p,NULL);
+    if (gpsfilted(x,y,p))
+        return;
+    char *e = (char *)malloc(sizeof(_e) + 1);//to be free
+    strcpy(e, _e);
+    //初始化一个record结构,放在栈中不许要free
+    struct record r;
+    r.time = log->time;
+    r.x = x;
+    r.y = y;
+    r.p = p;
+    r.e = e;
+    //如果有合法的basekey，则处理主基站和其他基站
     if (basekey != NULL)
     {
-        struct record r;
-        r->time = log->time;
-
-    }    
+        r.key = basekey;
+        r.type = 1;
+        printR(r);
+        //主基站处理完毕，扫描周边基站
+        if (log->n8blaclist->size == log->n8bcilist->size){
+            int i;
+            for (i = 0; i< log->n8blaclist->size; i++)
+            {
+                char *lac = (char*) (list_get(log->n8blaclist,i))->data;
+                char *ci = (char*) (list_get(log->n8bcilist,i))->data;
+                char *nkey = getnkey(mcc,mnc,lac,ci);//to be free
+                if (nkey == NULL)
+                    continue;
+                r.key = nkey;
+                r.type = 2;
+                printR(r);
+                free(nkey);
+             }
+        }
+        //扫描wifi
+        int i;
+        for (i = 0; i < log->wifikeylist->size; i++)
+        {
+            char *wifikey = (char *)(list_get(log->wifikeylist, i))->data;
+            if (!iswkey(wifikey))
+                continue;
+            r.key = wifikey;
+            r.type = 0;
+            s.wkeynum++;
+            printR(r);
+        }
+    } 
+    free(e); 
 }
 
 void dealcorlog(){
-
+       
 }
 
 //对有效日志进行处理
 void deallog(struct log *log, int type, char *line)
 {
     char *vs = hmap_get(log->paramp, "vs");
-    char *m = hmap_get(log->paramp,"m");
-    char *e = hmap_get(log->paramp,"e");
+    char *m = hmap_get(log->paramp, "m");
+    char *e = hmap_get(log->paramp, "e");
     if (pubfilted(vs,m))
         return;
     //获取每条日志里不同记录的公共数据
@@ -385,6 +516,7 @@ void deallog(struct log *log, int type, char *line)
         char *ci = hmap_get(log->paramp, "ci");
         char *basekey = getbasekey(mcc,mnc,lac,ci,vs,m);
         dealtklog(basekey,mcc,mnc,log);
+        free(basekey);
     }else{
         dealcorlog();
     }
@@ -416,6 +548,7 @@ void parselog()
 			if(log != NULL)
 			{	
 				s.lognum++;
+//               printf("%s",line);
 				deallog(log,type,line);
 				freelog(log);
 			}
@@ -427,6 +560,7 @@ void parselog()
 	printf("read lines : %ld\n",s.linenum);
 	printf("read logs : %ld\n",s.lognum);
 	printf("read basekeys : %ld\n",s.basekeynum);
+	printf("read nkeys : %ld\n",s.nkeynum);
 
 }
 
