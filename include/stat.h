@@ -22,5 +22,6 @@ struct stat
     long basekeynum;//获取的主基站数目
     long nkeynum;//获取的周边基站数目
     long wkeynum;//获取的wifi基站数目
+    long keynum;
 };
 

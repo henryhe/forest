@@ -27,6 +27,35 @@ int logtype(char *line)
 	return 0;
 }
 
+/*
+ * 根据两个指针之间的内容，生成新的字符串，新申请的空间，需要free
+ * 注：start指向需要内容的第一个字符，end指向末尾字符的后边一个空间
+ */
+char *createstr(char *start, char *end)
+{
+    int len = end - start ;
+    char *result  = (char *)malloc(len + 1);
+    memcpy(result, start, len);
+    *(result + len) = '\0';
+    return result;
+}
+
+char getkeytype(char *key)
+{
+    char *p = key;
+    while (TRUE)
+    {
+        if (*p == '\0')
+            break;
+        if (*p == '.')
+            return 'b';
+        if (*p == ':')
+            return 'w';
+        p++;
+    }
+    return '0';
+}
+
 //截取一个字符串的字串，转化为int
 int getint(char *ori, int from , int to)
 {	
@@ -40,12 +69,12 @@ int getint(char *ori, int from , int to)
 	return result;
 }
 
-//将格式如2012-07-15 00:00:00,063的字符串转化为1900年到该时间的秒数
+//将格式如2012-07-15 00:00:00的字符串转化为1900年到该时间的秒数
 long gettime( char* line )
 {
-	char *timeinfo = (char *)malloc(24);
-	memcpy(timeinfo,line,23);
-    *(timeinfo+23) = '\0';
+	char *timeinfo = (char *)malloc(20);
+	memcpy(timeinfo,line,19);
+    *(timeinfo + 19) = '\0';
 	struct tm t;
     t.tm_year = getint(timeinfo, 0, 3) - 1900 ;
 	t.tm_mon  = getint(timeinfo, 5, 6) - 1;
@@ -351,7 +380,7 @@ char *catkey(char *mcc, char *mnc, char *lac, char *ci)
 /**计算basekey，如果参数不全，或者不符合日志要求，返回NULL
  * 返回的basekey是新申请的空间需要free
  */
-char *getbasekey(char *mcc, char *mnc, char *lac, char *ci, char *vs, char *m)
+char *getbkey(char *mcc, char *mnc, char *lac, char *ci, char *vs, char *m)
 {
     if (mcc == NULL || mnc == NULL || lac == NULL || ci == NULL)
         return NULL;
@@ -375,7 +404,6 @@ char *getbasekey(char *mcc, char *mnc, char *lac, char *ci, char *vs, char *m)
     sprintf(f_mnc,"%d",i_mnc);
     char *basekey = catkey(mcc,f_mnc,lac,ci);
     free(f_mnc);
-    s.basekeynum++;
     return basekey;
 }
 
@@ -395,7 +423,6 @@ char *getnkey(char *mcc, char *mnc, char *lac, char *ci)
     sprintf(f_mnc,"%d",i_mnc);
     char *nkey = catkey(mcc,f_mnc,lac,ci);
     free(f_mnc);
-    s.nkeynum++;
     return nkey;
 
 }
@@ -424,11 +451,12 @@ int gpsfilted(double x,double y,double p){
 }
 
 void printR(struct record r){
- // printf("%s ", r.key);
-//    printf("%ld ", r.time);
-//    printf("%lf %lf %lf ", r.x, r.y, r.p);
-//    printf("%d ", r.type);
-//    printf("%s\n", r.e);
+    s.keynum++;
+    //printf("%s ", r.key);
+    //printf("%ld ", r.time);
+    //printf("%lf %lf %lf ", r.x, r.y, r.p);
+    //printf("%d ", r.type);
+    //printf("%s\n", r.e);
 }
 
 //得到来自tk日志的结果
@@ -447,7 +475,7 @@ void dealtklog(char *basekey,  char *mcc, char *mnc, struct log *log)
     double p = strtod(_p,NULL);
     if (gpsfilted(x,y,p))
         return;
-    char *e = (char *)malloc(sizeof(_e) + 1);//to be free
+    char *e = (char *)malloc(sizeof(_e) + 1);
     strcpy(e, _e);
     //初始化一个record结构,放在栈中不许要free
     struct record r;
@@ -469,7 +497,7 @@ void dealtklog(char *basekey,  char *mcc, char *mnc, struct log *log)
             {
                 char *lac = (char*) (list_get(log->n8blaclist,i))->data;
                 char *ci = (char*) (list_get(log->n8bcilist,i))->data;
-                char *nkey = getnkey(mcc,mnc,lac,ci);//to be free
+                char *nkey = getnkey(mcc,mnc,lac,ci);
                 if (nkey == NULL)
                     continue;
                 r.key = nkey;
@@ -494,8 +522,185 @@ void dealtklog(char *basekey,  char *mcc, char *mnc, struct log *log)
     free(e); 
 }
 
-void dealcorlog(){
-       
+/* 根据传入的基站key，做过滤，去掉多余的0，返回可用的key */
+char *getbkeyfs(char *ori, char *vs, char *m)
+{
+    char *mcc = NULL;
+    char *mnc = NULL;
+    char *lac = NULL;
+    char *ci = NULL;
+    char *start = ori;
+    char *end = start;
+    int varflag;
+    while (TRUE)
+    {
+        if (*end == '\0')
+        {   
+            if (varflag != 3)
+            {
+                if (mcc != NULL)
+                    free(mcc);
+                if (mnc != NULL)
+                    free(mnc);
+                if (lac != NULL)
+                    free(lac);
+                return NULL;
+            }
+            ci = createstr(start, end);
+            char *bkey = getbkey(mcc, mnc, lac, ci, vs, m);
+            free(mcc);
+            free(mnc);
+            free(lac);
+            free(ci);
+            return bkey;
+        }
+        if (*end == '.')
+        {
+            if (varflag == 0)
+                mcc = createstr(start, end);
+            if (varflag == 1)
+                mnc = createstr(start, end);
+            if(varflag == 2)
+                lac = createstr(start, end);
+            varflag++;
+            start = ++end;
+            continue;
+        }
+        end++;
+    }
+
+}
+
+struct list *getkeylist(char *data, char *vs, char *m)
+{
+    struct list *list = list_create();
+    int num = 0;
+    char *start = data;
+    char *end = start;
+    while (TRUE)
+    {
+        if (*end == '\0')
+            break;
+        if (*end == '@')
+        {
+            char *key = createstr(start, end);
+            char t = getkeytype(key);
+            if (t == 'b'){
+                char *bkey = getbkeyfs(key, vs, m);
+                if(bkey != NULL)
+                {
+                    struct list_e *e = listnode_create(bkey);
+                    list_add(list,e);
+                }              
+            }else if (t == 'w')
+                {
+                    char *wkey = (char*)malloc(strlen(key) + 1);
+                    strcpy(wkey, key);
+                    if(iswkey(wkey))
+                    {
+                        struct list_e *e = listnode_create(wkey);
+                        list_add(list,e);
+                    }else{
+                        free(wkey);
+                    }
+                }
+            free(key);
+            start = ++end;
+            continue;
+        }
+        if (*end == ';')
+        {
+            start = ++end;
+            continue;
+        }
+        end++;
+    }
+    return list;
+}
+
+void dealcorlog(char *vs, char *m, struct log *log )
+{
+    char *lu = hmap_get(log->paramp, "lu");
+    char *e = hmap_get(log->paramp, "e");
+    char *start  = lu;
+    char *end = lu;
+    int varflag = 0;//标记一条提交信息参数读取状态，按参数顺序赋值，如0为即将读取时间，1为即将读取y
+    int gpsflag = 0;//0标记gps数据没有，或者不合法，1表示正常
+    struct record r;
+    r.e = e;
+    while (TRUE)
+    {
+        if (*end == '\0')
+        {
+            if (gpsflag == 0)
+                break;
+            char *value = createstr(start, end);
+            struct list* klist = getkeylist(value, vs, m);
+            int i;
+            for (i = 0; i < klist->size; i++)
+            {
+                char *key = (char *) (list_get(klist, i))->data;
+                r.key = key;
+                char t = getkeytype(key);
+                if (t == 'b')
+                    if (i == 0)
+                        r.type = 1;//主基站
+                    else
+                        r.type = 2;
+                else
+                    r.type = 0;//wifi
+                printR(r);
+            }
+            list_destroy(klist);
+            free(value);
+            break;
+        }
+
+        if (*end == '|')
+        {
+            if (gpsflag == 0)
+            {
+                varflag = 0;
+                start = ++end;
+                continue;
+            }
+            char *value = createstr(start, end);
+            struct list* klist = getkeylist(value, vs, m);
+            int i;
+            for (i = 0; i < klist->size; i++)
+            {
+                char *key = (char *) (list_get(klist, i))->data;
+                r.key = key;
+                printR(r);
+            }
+            list_destroy(klist);
+            free(value);
+            start = ++end;
+            continue;
+        }
+
+        if (*end == ',')
+        {
+            char *value = createstr(start, end);
+            if (varflag == 0)
+                r.time = gettime(value);
+            if (varflag == 1)
+                r.y = strtod(value,NULL);
+            if (varflag == 2)
+                r.x = strtod(value,NULL);
+            if (varflag == 3)
+            {
+                r.p = strtod(value,NULL);
+                if (!gpsfilted(r.x, r.y, r.p)) 
+                    gpsflag = 1;
+            }
+            varflag++;
+            start = ++end;
+            free(value);
+            continue;
+        }
+        end++;
+    }
 }
 
 //对有效日志进行处理
@@ -507,18 +712,18 @@ void deallog(struct log *log, int type, char *line)
     if (pubfilted(vs,m))
         return;
     //获取每条日志里不同记录的公共数据
-    //basekey在getbasekey中申请的空间，将在record中free
+    //basekey在getbkey中申请的空间，将在record中free
     if (type == 1)
     {
         char *mcc = hmap_get(log->paramp, "mcc");
         char *mnc = hmap_get(log->paramp, "mnc");
         char *lac = hmap_get(log->paramp, "lac");
         char *ci = hmap_get(log->paramp, "ci");
-        char *basekey = getbasekey(mcc,mnc,lac,ci,vs,m);
+        char *basekey = getbkey(mcc,mnc,lac,ci,vs,m);
         dealtklog(basekey,mcc,mnc,log);
         free(basekey);
     }else{
-        dealcorlog();
+        dealcorlog(vs, m, log);
     }
 }
 
@@ -536,8 +741,8 @@ void parselog()
 {
 	printf("start: read log: %s",getnowtime());
 	char *line = (char *)malloc(READ_BUFFER_SIZE);
-//	FILE *fp = fopen("test","r+");
-	while (fgets(line,READ_BUFFER_SIZE,stdin) != NULL )
+//  FILE *fp = fopen("test","r+");
+	while (fgets(line,READ_BUFFER_SIZE,stdin) != NULL)
 //	while(fgets(line, READ_BUFFER_SIZE, fp) != NULL)
 	{
 		s.linenum++;
@@ -548,7 +753,7 @@ void parselog()
 			if(log != NULL)
 			{	
 				s.lognum++;
-//               printf("%s",line);
+//                printf("%s",line);
 				deallog(log,type,line);
 				freelog(log);
 			}
@@ -559,8 +764,7 @@ void parselog()
 	printf("end: read log  :%s",getnowtime());
 	printf("read lines : %ld\n",s.linenum);
 	printf("read logs : %ld\n",s.lognum);
-	printf("read basekeys : %ld\n",s.basekeynum);
-	printf("read nkeys : %ld\n",s.nkeynum);
+	printf("read keys : %ld\n",s.keynum);
 
 }
 
