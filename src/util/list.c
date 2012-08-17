@@ -71,7 +71,7 @@ size_t list_size( const struct list *list )
 void list_print( struct list* list )
 {
 	struct list_e* e = list->head;
-    printf("list:");
+//    printf("list:");
 	while ( e )
 	{
 		printf("%s ",(char *)e->data);
@@ -107,7 +107,18 @@ struct list_e *list_get( struct list *list, int index )
 	return node;
 }
 
-
+void list_clear(struct list *list)
+{
+	while ( list->head )
+	{   
+        struct list_e *temp = list->head;
+		list->head = list->head->next;
+        free(temp->data);
+        free(temp);
+        list->size-- ;
+	}
+	assert(list->size == 0);
+}
 
 int list_test_main(){
 	while(1){

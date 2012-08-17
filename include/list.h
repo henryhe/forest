@@ -34,3 +34,5 @@ extern struct list_e* list_delete(struct list *list, int index);
 extern struct list_e* listnode_create(void *data);
 
 extern struct list_e* list_get(struct list *list, int index);
+
+extern void list_clear(struct list* list);

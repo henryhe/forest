@@ -17,10 +17,10 @@ int logtype(char *line)
 	while (*p != '\0') 
 	{	
 		//来自tk的日志
-		if (*p == '&' && *(p+1) == '_' && *(p+2) == 'x' && *(p+3) == '=')
+		if (*p == '&' && *(p + 1) == '_' && *(p + 2) == 'x' && *(p + 3) == '=')
 			return 1;
 		//来自corm的日志
-		if (*p == 'l' && *(p+1) == 'u' && *(p+2) == '=')
+		if (*p == 'l' && *(p + 1) == 'u' && *(p + 2) == '=')
 			return 2;
 		p++;
 	}
@@ -450,13 +450,21 @@ int gpsfilted(double x,double y,double p){
     return FALSE;
 }
 
+void printne(struct list *list)
+{
+    if (list->size < 2)
+        return;
+//    printf("ne ");
+//    list_print(list);
+}
+
 void printR(struct record r){
     s.keynum++;
-    //printf("%s ", r.key);
-    //printf("%ld ", r.time);
-    //printf("%lf %lf %lf ", r.x, r.y, r.p);
-    //printf("%d ", r.type);
-    //printf("%s\n", r.e);
+//    printf("%s ", r.key);
+//    printf("%ld ", r.time);
+//    printf("%lf %lf %lf ", r.x, r.y, r.p);
+//    printf("%d ", r.type);
+//    printf("%s\n", r.e);
 }
 
 //得到来自tk日志的结果
@@ -484,17 +492,25 @@ void dealtklog(char *basekey,  char *mcc, char *mnc, struct log *log)
     r.y = y;
     r.p = p;
     r.e = e;
+    //保存周边信息的list
+    struct list* nelist = list_create();
+    char *nekey;
     //如果有合法的basekey，则处理主基站和其他基站
     if (basekey != NULL)
     {
         r.key = basekey;
         r.type = 1;
         printR(r);
+        //周边关系的主key
+        nekey = createstr(r.key, r.key + strlen(r.key));
+        struct list_e *e = listnode_create(nekey);
+        list_add(nelist,e);
         //主基站处理完毕，扫描周边基站
-        if (log->n8blaclist->size == log->n8bcilist->size){
+        if (log->n8blaclist->size == log->n8bcilist->size)
+        {
             int i;
             for (i = 0; i< log->n8blaclist->size; i++)
-            {
+            {   //nkey是新拼接的所以学要在出for的时候free
                 char *lac = (char*) (list_get(log->n8blaclist,i))->data;
                 char *ci = (char*) (list_get(log->n8bcilist,i))->data;
                 char *nkey = getnkey(mcc,mnc,lac,ci);
@@ -503,22 +519,30 @@ void dealtklog(char *basekey,  char *mcc, char *mnc, struct log *log)
                 r.key = nkey;
                 r.type = 2;
                 printR(r);
+                nekey = createstr(r.key, r.key + strlen(r.key));
+                struct list_e *e = listnode_create(nekey);
+                list_add(nelist,e);
                 free(nkey);
              }
         }
-        //扫描wifi
-        int i;
-        for (i = 0; i < log->wifikeylist->size; i++)
-        {
-            char *wifikey = (char *)(list_get(log->wifikeylist, i))->data;
-            if (!iswkey(wifikey))
-                continue;
-            r.key = wifikey;
-            r.type = 0;
-            s.wkeynum++;
-            printR(r);
-        }
     } 
+    //扫描wifi
+    int i;
+    for (i = 0; i < log->wifikeylist->size; i++)
+    {   //wifikey是参数map中的指针，会在map中free掉
+        char *wifikey = (char *)(list_get(log->wifikeylist, i))->data;
+        if (!iswkey(wifikey))
+            continue;
+        r.key = wifikey;
+        r.type = 0;
+        s.wkeynum++;
+        printR(r);
+        nekey = createstr(r.key, r.key + strlen(r.key));
+        struct list_e *e = listnode_create(nekey);
+        list_add(nelist,e);
+    }
+    printne(nelist);
+    list_destroy(nelist);
     free(e); 
 }
 
@@ -636,6 +660,8 @@ void dealcorlog(char *vs, char *m, struct log *log )
                 break;
             char *value = createstr(start, end);
             struct list* klist = getkeylist(value, vs, m);
+            struct list* nelist = list_create();
+            char *nekey;
             int i;
             for (i = 0; i < klist->size; i++)
             {
@@ -650,7 +676,12 @@ void dealcorlog(char *vs, char *m, struct log *log )
                 else
                     r.type = 0;//wifi
                 printR(r);
+                nekey = createstr(r.key, r.key + strlen(r.key));
+                struct list_e *e = listnode_create(nekey);
+                list_add(nelist,e);
             }
+            printne(nelist);
+            list_destroy(nelist);
             list_destroy(klist);
             free(value);
             break;
@@ -666,16 +697,32 @@ void dealcorlog(char *vs, char *m, struct log *log )
             }
             char *value = createstr(start, end);
             struct list* klist = getkeylist(value, vs, m);
+            struct list* nelist = list_create();
+            char *nekey;
             int i;
             for (i = 0; i < klist->size; i++)
             {
                 char *key = (char *) (list_get(klist, i))->data;
                 r.key = key;
+                char t = getkeytype(key);
+                if (t == 'b')
+                    if (i == 0)
+                        r.type = 1;//主基站
+                    else
+                        r.type = 2;
+                else
+                    r.type = 0;//wifi
                 printR(r);
+                nekey = createstr(r.key, r.key + strlen(r.key));
+                struct list_e *e = listnode_create(nekey);
+                list_add(nelist,e);
             }
+            printne(nelist);
+            list_destroy(nelist);
             list_destroy(klist);
             free(value);
             start = ++end;
+            varflag = 0;
             continue;
         }
 
@@ -741,7 +788,7 @@ void parselog()
 {
 	printf("start: read log: %s",getnowtime());
 	char *line = (char *)malloc(READ_BUFFER_SIZE);
-//  FILE *fp = fopen("test","r+");
+//    FILE *fp = fopen("test","r+");
 	while (fgets(line,READ_BUFFER_SIZE,stdin) != NULL)
 //	while(fgets(line, READ_BUFFER_SIZE, fp) != NULL)
 	{
@@ -753,7 +800,7 @@ void parselog()
 			if(log != NULL)
 			{	
 				s.lognum++;
-//                printf("%s",line);
+                printf("%s",line);
 				deallog(log,type,line);
 				freelog(log);
 			}
