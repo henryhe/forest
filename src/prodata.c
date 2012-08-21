@@ -17,17 +17,61 @@
  */
 #include "../include/locate.h"
 
-void wriRtoF(){
-    
+int reindex()
+{
+    return 0;
 }
 
-void writelog(){
-    
+void windex() 
+{
+
 }
 
+struct kdata *rkeydata(struct record *r)
+{
+    return NULL;
+}
+
+
+void wkeydata()
+{
+    
+
+}
+
+void redata()
+{
+
+}
+
+void wedata()
+{
+
+}
+
+void mvkey()
+{
+
+}
+
+struct record *ltoR(char *)
+{   
+    struct record *r;
+    return r;
+}
 
 int main(){
     printf("hello world\n");
+    char *line = (char *)malloc(READ_BUFFER_SIZE);
+    while (fgets(line, READ_BUFFER_SIZE, stdin) != NULL)
+    {
+        printf("%s",line);
+        struct *r = stoR(line);
+        struct *kdata = rkeydata(r);//TODO free
+        freeR(r);
+
+    }
+    free(line);
     return 1;
 }
 

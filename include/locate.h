@@ -4,6 +4,8 @@
 #include "stat.h"
 
 #define READ_BUFFER_SIZE 1024*21*5
+#define RECORD_SIZE 50
+#define RECORD_LIM 30000000
 
 struct log
 {//一条log的结构
@@ -24,3 +26,11 @@ struct record
 	int type;//类型，wifi为0，主基站为1，其他基站为2
 	char *e;
 };
+
+struct kdata
+{//一个key对应的一批数据
+    char *key;
+    struct list *Rlist;
+}
+
+extern void freeR(struct record *r);

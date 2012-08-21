@@ -1,16 +1,32 @@
-/**
-*author hepan
-*用于接受标准输入的日志，然后得到提交的数据，解析为各行都是有效数据的格式，格式如下
-*时间 基站（wifi）号  x坐标  y坐标 pt  获取类型
-*/
+ /*
+  * =====================================================================================
+  *
+  *       Filename:  parselog.c
+  *
+  *    Description:  存储解析好的基站位置信息,*用于接受标准输入的日志，然后得到提交的数据，
+  *                  解析为各行都是有效数据的格式，格式如下:
+  *                  基站（wifi）号 采集时间  x坐标  y坐标 pt  获取类型
+  *
+  *        Version:  1.0
+  *        Created:  2012年07月20日 13时16分02秒
+  *       Revision:  1.0
+  *       Compiler:  gcc
+  *
+  *         Author:  hepan
+  *   Organization:  tigerknows
+  *
+  * =====================================================================================
+ */
 #include "../include/locate.h"
 
-//返回日志来源，包含“&_x=”的日志判定为来源于定位，加上‘&’是因为cormorant日志里有些日志
-//包含“lu=”的即判定为cormorant行为日志来的信息
-
-//用语统计的结构
+//记录统计信息
 static struct stat s;
 
+/**
+  * 返回日志来源，包含“&_x=”的日志判定为来源于定位，加上‘&’是因为cormorant日志里有些日志
+  * 包含“lu=”的即判定为cormorant行为日志来的信息
+  * 返回值为0，1，2，0为无效数据，1为tk的日志，2为cor的日志
+  */
 int logtype(char *line) 
 {
 	char *p = line;
@@ -40,6 +56,11 @@ char *createstr(char *start, char *end)
     return result;
 }
 
+/* 
+ * function：判断kye的类型
+ * args：char *key
+ * return:代表类型的字符，b:基站；w:wifi
+ * */
 char getkeytype(char *key)
 {
     char *p = key;
@@ -56,7 +77,11 @@ char getkeytype(char *key)
     return '0';
 }
 
-//截取一个字符串的字串，转化为int
+/* 
+ * function:截取一个字符串的子串，转化为int
+ * args:char *ori 原始字符串，int from 字串起始位置，int to 字串结束位置
+ * return:对应的整数
+ * */
 int getint(char *ori, int from , int to)
 {	
     int n = to - from + 1;
@@ -454,17 +479,17 @@ void printne(struct list *list)
 {
     if (list->size < 2)
         return;
-//    printf("ne ");
-//    list_print(list);
+    printf("ne ");
+    list_print(list);
 }
 
 void printR(struct record r){
     s.keynum++;
-//    printf("%s ", r.key);
-//    printf("%ld ", r.time);
-//    printf("%lf %lf %lf ", r.x, r.y, r.p);
-//    printf("%d ", r.type);
-//    printf("%s\n", r.e);
+    printf("%s ", r.key);
+    printf("%ld ", r.time);
+    printf("%lf %lf %lf ", r.x, r.y, r.p);
+    printf("%d ", r.type);
+    printf("%s\n", r.e);
 }
 
 //得到来自tk日志的结果
@@ -800,7 +825,7 @@ void parselog()
 			if(log != NULL)
 			{	
 				s.lognum++;
-                printf("%s",line);
+     //           printf("%s",line);
 				deallog(log,type,line);
 				freelog(log);
 			}

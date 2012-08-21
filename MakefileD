@@ -1,0 +1,12 @@
+prodata: prodata.o hashmap.o list.o
+	gcc -o build/prodata build/prodata.o build/hashmap.o build/list.o
+
+prodata.o: src/prodata.c include/locate.h
+	gcc -o build/prodata.o -c src/prodata.c
+
+hashmap.o: src/util/hashmap.c include/hashmap.h
+	gcc -o build/hashmap.o -c src/util/hashmap.c
+
+list.o: src/util/list.c include/list.h
+	gcc -o build/list.o  -c src/util/list.c
+
