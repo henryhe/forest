@@ -1,8 +1,11 @@
-parselog: parselog.o hashmap.o list.o
-	gcc -o build/parselog build/parselog.o build/hashmap.o build/list.o
+parselog: parselog.o locate.o hashmap.o list.o
+	gcc -o build/parselog build/locate.o build/parselog.o build/hashmap.o build/list.o
 
 parselog.o: src/parselog.c include/locate.h
 	gcc -o build/parselog.o -c src/parselog.c
+
+locate.o: src/locate.c include/locate.h
+	gcc -o build/locate.o -c src/locate.c
 
 hashmap.o: src/util/hashmap.c include/hashmap.h
 	gcc -o build/hashmap.o -c src/util/hashmap.c

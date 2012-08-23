@@ -1,8 +1,8 @@
-.gitignore
+.git*
 test*
 tk_locate*
 logs/
 build/
 cscope*
-t/
 doc/
+
