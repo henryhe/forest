@@ -24,6 +24,11 @@ void freeR(struct record *r)
     free(r);
 }
 
+void freeK(struct keydata *k)
+{
+  free(k->key);
+}
+
 /*
  * function:根据两个指针之间的内容，生成新的字符串，新申请的空间，需要free
  * input   :两个字符指针，start,end;start指向需要内容的第一个字符，end指向末尾字符的后边一个空间

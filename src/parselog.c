@@ -286,7 +286,7 @@ int isnum(char *s){
             *s == '8' || *s == '9')
            {
             s++;
-            count ++;
+            count++;
             continue;
            }
         s++;
@@ -445,11 +445,11 @@ void printne(struct list *list)
 
 void printR(struct record r){
     s.keynum++;
-    //printf("%s ", r.key);
-    //printf("%ld ", r.time);
-    //printf("%lf %lf %lf ", r.x, r.y, r.p);
-    //printf("%d ", r.type);
-    //printf("%s\n", r.e);
+    printf("%s ", r.key);
+    printf("%ld ", r.time);
+    printf("%lf %lf %lf ", r.x, r.y, r.p);
+    printf("%d ", r.type);
+    printf("%s\n", r.e);
 }
 
 //得到来自tk日志的结果

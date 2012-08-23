@@ -27,13 +27,15 @@ struct record
 	char *e;
 };
 
-struct kdata
+struct keydata
 {//一个key对应的一批数据
     char *key;
     struct list *Rlist;
 };
 
 extern void freeR(struct record *r);
+
+extern void freeK(struct keydata *k);
 
 /*
  * function:根据两个指针之间的内容，生成新的字符串，新申请的空间，需要free

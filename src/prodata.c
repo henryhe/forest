@@ -17,7 +17,7 @@
  */
 #include "../include/locate.h"
 
-int reindex()
+int rdindex()
 {
     return 0;
 }
@@ -27,7 +27,7 @@ void windex()
 
 }
 
-struct kdata *rkeydata(struct record *r)
+struct keydata *rdKdata(struct record *r)
 {
     return NULL;
 }
@@ -39,7 +39,7 @@ void wkeydata()
 
 }
 
-void redata()
+void rddata()
 {
 
 }
@@ -54,24 +54,47 @@ void mvkey()
 
 }
 
-struct record *ltoR(char *)
+void cache_put(struct keydata *kd)
+{
+    //TODO index,读写文件的实现
+}
+
+struct keydata *cache_get(struct record *r)
+{
+    return NULL;
+}
+
+struct record *stoR(char *s)
 {   
     struct record *r;
     return r;
 }
 
-int main(){
-    printf("hello world\n");
+void prodata()
+{
     char *line = (char *)malloc(READ_BUFFER_SIZE);
     while (fgets(line, READ_BUFFER_SIZE, stdin) != NULL)
     {
         printf("%s",line);
-        struct *r = stoR(line);
-        struct *kdata = rkeydata(r);//TODO free
-        freeR(r);
-
+        struct record *r = stoR(line);
+        if (r == NULL)
+            continue;
+        struct keydata *kd = cache_get(r);
+        if (kd == NULL)
+        {
+            kd = rdKdata(r);
+            cache_put(kd);
+        }
+//        list_add(kd->key);
+//        freeK(kd);
+//        freeR(r);
     }
     free(line);
+}
+
+int main()
+{   
+    prodata(); 
     return 1;
 }
 
