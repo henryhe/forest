@@ -44,6 +44,7 @@ int logtype(char *line)
 	}
 	return 0;
 }
+
 /*
  * function: 将格式如2012-07-15 00:00:00的字符串转化为1900年到该时间的秒数
  * input   : 含有时间信息的字符串，格式如上
@@ -107,16 +108,15 @@ void dealpara(struct log *log, char *key, char *value )
 
 void freelog(struct log *log)
 {
-	hmap_destroy(log->paramp);
-	list_destroy(log->wifikeylist);
-	list_destroy(log->wifisslist);
-	list_destroy(log->n8blaclist);
-	list_destroy(log->n8bcilist);
-	list_destroy(log->n8bsslist);
+	hmap_destroy(log->paramp, NULL);
+	list_destroy(log->wifikeylist, NULL);
+	list_destroy(log->wifisslist, NULL);
+	list_destroy(log->n8blaclist, NULL);
+	list_destroy(log->n8bcilist, NULL);
+	list_destroy(log->n8bsslist, NULL);
 	free(log);
 }
 
-//初始化log结构
 struct log *log_init(){
 	struct log* log = (struct log *)malloc(sizeof(struct log));
 	log->paramp = hmap_create();
@@ -128,7 +128,11 @@ struct log *log_init(){
     return log;
 }
 
-
+/* 
+ * function: 处理来自tk的log
+ * input   : 代表一条日志的日志行
+ * output  : 返回一个log结构
+ * */
 struct log *tklog( char *line )
 {
 	struct log* log = log_init();
@@ -145,15 +149,12 @@ struct log *tklog( char *line )
 		if ( *end == '=')
         {
 			//某些特殊情况洗下，参数的值中有=
-			if( *(start - 1) == '=' )
+			if ( *(start - 1) == '=' )
 			{
 				end++;
 				continue;
 			}
-            int len = end - start;
-            key = (char *)malloc(len + 1);
-            memcpy(key , start, len);
-            *(key + len) = '\0';
+            key = createstr(start, end);
             start = ++end;
 			haskey = 1;
             continue;
@@ -167,10 +168,7 @@ struct log *tklog( char *line )
 				start = ++ end;
 				continue;
 			}
-            int len = end -start;
-            value = ( char *)malloc(len + 1);
-            memcpy(value , start, len);
-            * (value + len) = '\0';
+            value = createstr(start,end);
 			dealpara(log, key, value);
 			haskey = 0;
             start = ++end;
@@ -179,10 +177,7 @@ struct log *tklog( char *line )
 
         if(*end == '}')
         {
-            int len = end -start;
-            value = ( char *)malloc(len + 1);
-            memcpy(value , start , len);
-            *(value + len) = '\0';
+            value = createstr(start,end);
      	    dealpara(log, key, value);
             break;
         }
@@ -527,7 +522,7 @@ void dealtklog(char *basekey,  char *mcc, char *mnc, struct log *log)
         list_add(nelist,e);
     }
     printne(nelist);
-    list_destroy(nelist);
+    list_destroy(nelist, NULL);
     free(e); 
 }
 
@@ -666,8 +661,8 @@ void dealcorlog(char *vs, char *m, struct log *log )
                 list_add(nelist,e);
             }
             printne(nelist);
-            list_destroy(nelist);
-            list_destroy(klist);
+            list_destroy(nelist, NULL);
+            list_destroy(klist, NULL);
             free(value);
             break;
         }
@@ -703,8 +698,8 @@ void dealcorlog(char *vs, char *m, struct log *log )
                 list_add(nelist,e);
             }
             printne(nelist);
-            list_destroy(nelist);
-            list_destroy(klist);
+            list_destroy(nelist, NULL);
+            list_destroy(klist, NULL);
             free(value);
             start = ++end;
             varflag = 0;

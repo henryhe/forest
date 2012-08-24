@@ -15,15 +15,16 @@ struct list_e{
 struct list{
     size_t size;
     struct list_e *head;
+    struct list_e *tail;
 };
-
+typedef void (*lfrcb)(void *);
 # endif
 
 extern struct list* list_create();
 
 extern void list_clear(struct list *list);
 
-extern void list_destory(struct list *list);
+extern void list_destory(struct list *list,lfrcb fr);
 
 extern size_t list_size(const struct list *list);
 

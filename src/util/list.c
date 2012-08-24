@@ -11,19 +11,19 @@ struct list *list_create()
 	struct list *list = ( struct list * )malloc( sizeof( struct list ) );
 	list->size = 0;
 	list->head = NULL;
+    list->tail = NULL;
 	return list;
 }
 //从list中删除一个node，并返回这个node
 struct list_e *list_delete( struct list *list, int index )
 {
 	struct list_e * node = NULL;
-    if( list->size <= 0 )
+    if( list->size <= 0 || index >= list->size )
 		return NULL;
-	assert(index < list->size);
 	struct list_e *pos = list->head;
 	int i;
 	//将指针知道要移除的node的前一个node, 若要删除的是head，则pos也指向第一个
-	for( i=0; i < index - 1 && pos->next != NULL ; i++ )
+	for (i = 0; i<index - 1 && pos->next != NULL; i++)
 		pos = pos->next;
 	if( index == 0 )
 	{//删除head
@@ -33,23 +33,27 @@ struct list_e *list_delete( struct list *list, int index )
 		list->head = pos;
 	}else{
 		node = pos->next;
-		pos->next = node->next;
+        if (node != NULL )
+    		pos->next = node->next;
+        else
+            pos->next = NULL;
 		node->next = NULL;
 	}
-	list->size--;
+    list->size--;
+    if (index == list->size -1 )
+        list->tail = pos;
 	assert(list->size >= 0);
 	return node;
 }
 //往list尾添加一个node
 void list_add( struct list *list,struct list_e *node )
 {
-	struct list_e *pos = list->head;
-	if( pos == NULL )
+	if( list->head  == NULL ){
 		list->head = node;
-	else{
-		while( pos->next != NULL )
-			pos = pos->next;
-		pos->next = node;
+        list->tail = node;
+    }else{
+        list->tail->next = node;
+        list->tail = node;
 	}
 	list->size ++;
 }
@@ -80,20 +84,22 @@ void list_print( struct list* list )
 	printf("\n");
 }
 //销毁整个list
-void list_destroy( struct list *list ){
-//	list_print( list );
+void list_destroy(struct list *list,lfrcb fr){
 	struct list_e *node;
 	while ( list->head )
 	{
 		node = list->head;
 		list->head = list->head->next;
-		free(node->data);
+        if (fr != NULL)
+            (*fr)(node->data);
+        else
+    		free(node->data);
 		free(node);
 		list->size--;
 		assert(list->size >= 0);
 	}
    free(list);
-}
+};
 
 //得到list某个index的元素,如果越界返回NULL
 struct list_e *list_get( struct list *list, int index )
@@ -120,7 +126,12 @@ void list_clear(struct list *list)
 	assert(list->size == 0);
 }
 
-int list_test_main(){
+void ltestfree(void *data)
+{
+    free(data);
+}
+
+int lmain(){
 	while(1){
 		struct list* list = list_create();
 		int i;
@@ -132,7 +143,7 @@ int list_test_main(){
 			list_add( list, e);
 		}
 		list_print( list );
-		list_destroy( list );
+		list_destroy(list, NULL);
 	}
 
 
