@@ -20,17 +20,18 @@
 #include "hashmap.h"
 
 struct mycache{
-    struct hasmap *mp;//保存key value实体的缓存
-    struct list *dlist;//保存各个key热度顺序的list，用于写入文件
+    struct hmap *mp;//保存key value实体的缓存
+    struct list *hotlist;//保存各个key热度顺序的list，用于写入文件
+    long limsize;
     long bsize;
 };
 
-extern struct mycache *cache_create(long hsize, long bsize);
+extern struct mycache *cache_create(int limsize, long bsize);
 
-extern void cache_destroy(struct mycache *cache, hfrcb fr);
+extern void cache_destroy(struct mycache *cache, hfrcb hfr);
 
-extern int cache_put(struct mycache *cache, char *key, void *value);
+extern int cache_put(struct mycache *cache, char *key, void *value, int size);
 
 extern void *cache_get(struct mycache *cache, char *key);
 
-extern int cache_wtoD(struct mycache *cache, long writesize);
+extern int cache_wtoD(struct mycache *cache, char *path, float fra);

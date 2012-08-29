@@ -126,6 +126,15 @@ void list_clear(struct list *list)
 	assert(list->size == 0);
 }
 
+void list_totail(struct list *list,struct list_e *pre, struct list_e *e){
+    if (e == NULL || e->next == NULL)
+        return;
+    pre->next = e->next;
+    list->tail = e;
+    e->next = NULL;
+}
+
+
 void ltestfree(void *data)
 {
     free(data);

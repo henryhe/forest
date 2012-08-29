@@ -14,24 +14,35 @@ struct hmap *hmap_create()
 	struct hmap *mp = (struct hmap *)malloc(sizeof(struct hmap));
 	mp->size = 0;
     mp->hsize = KEY_SIZE;
+    mp->khsizes = (int **)calloc(KEY_SIZE, sizeof(int *));
     mp->em = (struct hmap_e **)calloc(KEY_SIZE, sizeof(struct hmap_e *));
 	int i;
-	for(i = 0; i < mp->hsize; i++)
+	for(i = 0; i < mp->hsize; i++){
+        int *p = (int *)malloc(sizeof(int));
+        *p = 0;
+        mp->khsizes[i] = p;
 		mp->em[i] = NULL;
+    }
 	return mp;
 }
 
-struct hmap *hmap_create_ws(int size)
+struct hmap *hmap_create_ws(int hsize)
 {
 	struct hmap *mp = (struct hmap *)malloc(sizeof(struct hmap));
 	mp->size = 0;
-    mp->hsize = size;
-    mp->em = (struct hmap_e **)calloc(KEY_SIZE, sizeof(struct hmap_e *));
+    mp->hsize = hsize;
+    mp->khsizes = (int **)calloc(hsize, sizeof(int *));
+    mp->em = (struct hmap_e **)calloc(hsize, sizeof(struct hmap_e *));
 	int i;
-	for(i = 0; i < mp->hsize; i++)
+	for(i = 0; i < mp->hsize; i++){
+        int *p = (int *)malloc(sizeof(int));
+        *p = 0;
+        mp->khsizes[i] = p;
 		mp->em[i] = NULL;
+    }
 	return mp;
 }
+
 void hmap_print(struct hmap *mp)
 {
 	printf("to print :\n");
@@ -53,8 +64,11 @@ void hmap_print(struct hmap *mp)
 void hmap_destroy(struct hmap *mp, hfrcb fr)
 {
 	int i;
-	for(i = 0; i < mp->hsize; i++)
+	for(i = 0; i < mp->hsize; i++){
 		mp->size -= hmap_key_destroy(mp->em[i], fr);
+        free(mp->khsizes[i]);
+    }
+    free(mp->khsizes);
     free(mp->em);
 	assert(mp->size == 0);
 	free(mp);
@@ -134,6 +148,32 @@ void hmap_put(struct hmap *mp, char *key, void * value)
     e->next = mp->em[hash];
     mp->em[hash] = e;
     mp->size++;
+}
+
+int hmap_put_wcb(struct hmap *mp, char *key, void * value, int bsize, hmgcb mg)
+{
+    if (mg == NULL)
+        return 0;
+    int key_len = strlen(key);
+	assert(key && key_len>0);
+    long hash = hash_string(key,key_len) % (mp->hsize);
+//	printf(" put %s  %ld :%s \n " ,key,hash,(char *) value);
+    //判断是否已经放入hashmap中，如果放入则替换内容
+	struct hmap_e *e  = hmap_get_e(mp, key);
+	if (e != NULL)
+	{   
+        *(mp->khsizes[hash]) -= (*mg)(value, e->value);
+        *(mp->khsizes[hash]) += bsize;
+		return 1;
+	}
+    //没有放入，则添加
+	e = hmap_e_create(key, value);
+    //把新元素放到每个key队列的头部
+    e->next = mp->em[hash];
+    mp->em[hash] = e;
+    *(mp->khsizes[hash]) += bsize;
+    mp->size++;
+    return 1;
 }
 
 void *hmap_get(struct hmap *mp, char *key)

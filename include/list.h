@@ -37,3 +37,5 @@ extern struct list_e* listnode_create(void *data);
 extern struct list_e* list_get(struct list *list, int index);
 
 extern void list_clear(struct list* list);
+
+extern void list_totail(struct list *list,struct list_e *pre, struct list_e *e);
