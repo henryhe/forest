@@ -18,7 +18,7 @@
 #include "common.h"
 #include "list.h"
 #include "hashmap.h"
-
+#include "locate.h"
 struct mycache{
     struct hmap *mp;//保存key value实体的缓存
     struct list *hotlist;//保存各个key热度顺序的list，用于写入文件
@@ -35,3 +35,5 @@ extern int cache_put(struct mycache *cache, char *key, void *value, int size);
 extern void *cache_get(struct mycache *cache, char *key);
 
 extern int cache_wtoD(struct mycache *cache, char *path, float fra);
+
+void hotthekey(struct mycache *cache, char *key);

@@ -36,6 +36,12 @@ int cache_put(struct mycache *cache, char *key, void *value,int size){
     if (cache->bsize + size >= cache->limsize)
         return -1;
     hmap_put_wcb(cache->mp, key, value, size, NULL);//TODO 合并的函数还没写
+    hotthekey(cache, key); 
+    cache->bsize += size;
+    return size;
+}
+
+void hotthekey(struct mycache *cache, char *key){
     //处理hotkeylist和keysizelist
     struct list_e *pre = listnode_create(NULL);//虚拟的头，便于代码编写
     pre->next = cache->hotlist->head;
@@ -47,21 +53,30 @@ int cache_put(struct mycache *cache, char *key, void *value,int size){
         pre = pre->next;
     }
     if (index < 0 || pre->next == NULL){//hotlist中没有要放入key的情况
-        struct list_e *e = listnode_create(key);
+        char *newkey = createstr(key, key + strlen(key));
+        struct list_e *e = listnode_create(newkey);
         list_add(cache->hotlist, e);
     }else{
         list_totail(cache->hotlist, pre, pre->next);
     }
-    cache->bsize += size;
-    return size;
+
 }
 
+void *cache_get(struct mycache *cache, char *key){
+    hotthekey(cache, key);
+    return hmap_get(cache->mp, key);
+
+}
+
+int cache_wtoD(struct mycache *cache, char *path, float fra){
+    return 0;
+}
 int main()
 {
     printf("hello world ,I am hp cache\n");
     while(1){
-    struct mycache *cache = cache_create(10000,4000000);
-    cache_destroy(cache,NULL);
+        struct mycache *cache = cache_create(10000,4000000);
+        cache_destroy(cache,NULL);
     }
     getchar();
 }
