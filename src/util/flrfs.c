@@ -24,22 +24,22 @@ int writeindex(struct list *list, char *path){
         exit(0);
     }
     
-    void *data = malloc(list->size * indexRsize);    
+    void *data = malloc(readRnum * indexRsize);    
     void *flag = data; 
     struct list_e *e = list->head;
     while (e) {
         struct indexR *r = (struct indexR *)e->data;
-        memcpy(flag,r->key,strlen(r->key));
-        flag += strlen(r->key);
-        memcpy(flag,&(r->filename),sizeof(int));
+        memcpy(flag, r->key, keysize);
+        flag += keysize;
+        memcpy(flag, &(r->filename),sizeof(int));
         flag += sizeof(int);
-        memcpy(flag,&(r->offset),sizeof(long));
-        flag += sizeof(long);
-        memcpy(flag,&(r->flag),sizeof(short));
-        flag += sizeof(short);
+        memcpy(flag, &(r->offset),sizeof(int));
+        flag += sizeof(int);
+        memcpy(flag, &(r->flag),sizeof(char));
+        flag += sizeof(char);
         e = e->next;
     }
-    fwrite(data, (list->size) * indexRsize , 1, out);
+    fwrite(data, readRnum * indexRsize , 1, out);
     free(data);
     fclose(out);
 }
@@ -63,17 +63,18 @@ struct indexR *createindexR(char *key, int filename, long offset, short flag){
 void datatoindex(struct index *index, void *data, long dsize){
     long sizeflag = 0;
     void *pos = data;
-    while (sizeflag < dsize){
-        char *key = createstr(data, data + keysize + 1);
-        pos += keysize;
+    while (sizeflag < indexRsize * readRnum){
+        char *key = createstr(pos, pos + keysize);
+        pos += keysize ;
         int *f = (int *)malloc(sizeof(int));
         memcpy(f, pos, sizeof(int));
         pos += sizeof(int);
-        long *o = (long *)malloc(sizeof(long));
-        memcpy(o, pos, sizeof(long));
-        pos += sizeof(long);
-        short *fl = (short *)malloc(sizeof(short));
-        memcpy(fl, pos, sizeof(short));
+        int *o = (int *)malloc(sizeof(int));
+        memcpy(o, pos, sizeof(int));
+        pos += sizeof(int);
+        char *fl = (char *)malloc(sizeof(char));
+        memcpy(fl, pos, sizeof(char));
+        pos += sizeof(char);
         struct indexR *r = createindexR(key, *f, *o, *fl);
         struct list_e *e = listnode_create(r);
         list_add(index->list, e);
@@ -97,6 +98,7 @@ struct index *readindex(char *path){
         if(readsize < readRnum * indexRsize)
             break;
     }
+    free(data);
     fclose(in);
     return index;
     
@@ -123,7 +125,7 @@ char *getnowtime()
 }
 
 void printindexR(struct indexR *r){
-    printf("%s %d %ld %d\n", r->key, r->filename, r->offset, r->flag);
+//    printf("%s %d %d %c\n", r->key, r->filename, r->offset, r->flag);
 }
 
 int main(){
@@ -133,14 +135,14 @@ int main(){
     struct index index;
     index.list = list;
     index.size = 0;
-    for(i = 0; i < 10000000; i++){
+    for(i = 0; i < readRnum; i++){
         struct indexR *r = (struct indexR *)malloc(sizeof(struct indexR));
-        char *key = (char *)malloc(10);
-        memcpy(key,"460.0.0.0\0",10);
+        char *key = (char *)malloc(keysize);
+        memcpy(key,"460.0.123.3",keysize);
         r->key = key;
-        r->filename = 512;
-        r->offset = 1024;
-        r->flag = 1;
+        r->filename = 51200000;
+        r->offset = 10241024;
+        r->flag = '1';
         struct list_e *e = listnode_create(r);
         list_add(index.list,e);
     }
@@ -158,5 +160,4 @@ int main(){
         e = e->next;
     }
     freeindex(index1);
-
 }

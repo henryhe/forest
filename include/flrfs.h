@@ -21,19 +21,19 @@
 
 #ifndef flrfs_include_flag
 
-#define indexRsize 25
+#define indexRsize 20
 
-#define readRnum 10000000
+#define readRnum 10
 
-#define keysize 10
+#define keysize 11
 
 #endif
 
 struct indexR{
     char *key;
     int filename;
-    long offset;
-    short flag;
+    int offset;
+    char flag;
 };
 
 struct index{
@@ -60,3 +60,6 @@ extern struct list *readflRs(struct list *list,struct index *index);
 
 int getfilename(struct flR *r);
 
+struct index *createindex();
+
+void datatoindex(struct index *index, void *data, long dsize);
