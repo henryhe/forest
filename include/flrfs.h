@@ -43,23 +43,26 @@ struct index{
 
 struct flR{
     char *key;
+    int num;
     struct list *dlist;
 };
 
-extern int writeindex(struct list *index,char *path);
+extern int saveindex(struct list *index,char *path);
 
 extern struct index *loadindex(char *path);
 
-extern struct flR *readflR(char *key, struct index *index);
+extern struct list_e *locatekey(char *key, struct index *index);
 
-extern int writeflR(char *key, struct index *index);
+extern struct flR *readflR(struct indexR *r);
+
+extern int writeflR(struct indexR *r);
 
 extern int writeflRs(struct list *list,struct index *index);
 
 extern struct list *readflRs(struct list *list,struct index *index);
 
-int getfilename(struct flR *r);
-
 struct index *createindex();
 
 void datatoindex(struct index *index, void *data, long dsize);
+
+extern int getfilename(struct flR *flr);

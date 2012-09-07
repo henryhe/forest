@@ -754,7 +754,7 @@ void deallog(struct log *log, int type, char *line)
     }
 }
 
-
+/* 
 char *getnowtime()
 {
 	time_t rawtime;
@@ -762,7 +762,7 @@ char *getnowtime()
 	time(&rawtime);
 	timeinfo = localtime(&rawtime);
 	return asctime(timeinfo);
-}
+}*/
 
 void parselog()
 {

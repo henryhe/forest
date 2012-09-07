@@ -17,7 +17,7 @@
  */
 #include "../../include/flrfs.h"
 
-int writeindex(struct list *list, char *path){
+int saveindex(struct list *list, char *path){
     FILE *out = fopen(path, "wb");
     if (out == NULL){
         printf("[ERROR]: writeindex error, can not open %s\n", path);
@@ -42,6 +42,7 @@ int writeindex(struct list *list, char *path){
     fwrite(data, readRnum * indexRsize , 1, out);
     free(data);
     fclose(out);
+    return 1;
 }
 
 struct index *createindex(){
@@ -88,7 +89,7 @@ void datatoindex(struct index *index, void *data, long dsize){
 
 
 
-struct index *readindex(char *path){
+struct index *loadindex(char *path){
     FILE *in = fopen(path,"rb");
     struct index *index = createindex();
     void *data = malloc(readRnum * indexRsize);
@@ -115,17 +116,50 @@ void freeindex(struct index *index){
     free(index);
 }
 
-char *getnowtime()
-{
-    time_t rawtime;
-    struct tm* timeinfo;
-    time(&rawtime);
-    timeinfo = localtime(&rawtime);
-    return asctime(timeinfo);
+
+/* 
+ * function ： 获得key的在index的信息，如果有返回key的indexR，
+ *             如果不存在返回前一个，所以调用的时候获得返回结果需要比较
+ * input    :  目标key, index
+ * output   :  目标key对应的indexR，或者目标key应该插入位置前边的indexR
+ * */
+struct list_e *locatekey(char *key, struct index *index){
+    int size = index->list->size;
+    if(index->list->head == NULL)
+       return NULL;
+//    struct indexR *start = (struct indexR *)index->list->head;
+//    struct indexR *end = (struct indexR *)index->list->tail;
+    int start = 0;
+    int end = size - 1;
+    int mid = 0;
+    while (TRUE){
+        mid = (start + end) / 2;
+        struct list_e *me  = list_get(index->list, mid);
+        struct indexR *mR = (struct indexR *)me->data; 
+        if (strcmp(key, mR->key) == 0)
+            return me;
+        if (start == mid){//如果区间最后只包含两个元素，如果不是在list的尾巴，即可确定返回
+            struct list_e *ne = me->next;
+            if (ne == NULL)
+                return me;
+            struct indexR *nR = ne->data;
+            if (strcmp(key,nR->key) >= 0)
+                return ne;
+            else
+                return me;
+        }
+        if (strcmp(key, mR->key) > 0){
+            start = mid;
+            continue;
+        }else{
+            end = mid;
+            continue;
+        }    
+    }
 }
 
 void printindexR(struct indexR *r){
-//    printf("%s %d %d %c\n", r->key, r->filename, r->offset, r->flag);
+    printf("%s %d %d %c\n", r->key, r->filename, r->offset, r->flag);
 }
 
 int main(){
@@ -148,11 +182,11 @@ int main(){
     }
     printf("start to write.\n");
     printf("time %s\n",getnowtime());
-    writeindex(index.list, "temp");
+    saveindex(index.list, "temp");
     printf("time %s\n",getnowtime());
     list_destroy(index.list,freeindexR);
     printf("write end.\n");
-    struct index *index1 = readindex("temp");
+    struct index *index1 = loadindex("temp");
     struct list_e * e = index1->list->head;
     while (e){
         struct indexR *r = (struct indexR *)e->data;

@@ -57,3 +57,5 @@ extern char getkeytype(char *key);
  * return:对应的整数
  */
 extern int getint(char *ori, int from , int to);
+
+extern char *getnowtime();

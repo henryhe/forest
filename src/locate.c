@@ -80,3 +80,17 @@ int getint(char *ori, int from , int to)
 	free(temp);
 	return result;
 }
+
+char *getnowtime()
+{      
+    time_t rawtime;
+    struct tm* timeinfo;
+    time(&rawtime);
+    timeinfo = localtime(&rawtime);
+    char *s = asctime(timeinfo);
+    int len = strlen(s);
+    char *t = (char *)malloc(len);
+    memcpy(t, s, len - 1);
+    *(t + len) = '\0';
+    return t;
+}  
