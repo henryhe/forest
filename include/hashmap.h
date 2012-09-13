@@ -23,6 +23,8 @@ struct hmap{
 };
 
 typedef void (*hfrcb)(void *);
+
+//合并新值和旧值的回调函数，返回旧值的size，第二个参数为旧值
 typedef int (*hmgcb)(void *,void *);
 #endif
 

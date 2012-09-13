@@ -158,6 +158,13 @@ struct list_e *locatekey(char *key, struct index *index){
     }
 }
 
+void addtoindex(struct list_e *pre, struct indexR *r){
+    struct list_e *new = listnode_create(r);
+    struct list_e *next = pre->next;
+    pre->next = new;
+    new->next = next;
+}
+
 void printindexR(struct indexR *r){
     printf("%s %d %d %c\n", r->key, r->filename, r->offset, r->flag);
 }

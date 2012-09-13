@@ -1,8 +1,11 @@
-prodata: prodata.o locate.o hashmap.o list.o
-	gcc -o build/prodata build/locate.o build/prodata.o build/hashmap.o build/list.o
+prodata: prodata.o mycache.o locate.o hashmap.o list.o
+	gcc -o build/prodata build/mycache.o build/locate.o build/prodata.o build/hashmap.o build/list.o
 
 prodata.o: src/prodata.c include/locate.h
 	gcc -o build/prodata.o -c src/prodata.c
+
+mycache.o: src/util/mycache.c include/mycache.h
+	gcc -o build/mycache.o -c src/util/mycache.c
 
 locate.o: src/locate.c include/locate.h
 	gcc -o build/locate.o -c src/locate.c

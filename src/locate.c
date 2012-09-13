@@ -17,11 +17,11 @@
  */
 #include "../include/locate.h"
 
-void freeR(struct record *r)
+void freeR(void *r)
 {
-    free(r->key);
-    free(r->e);
-    free(r);
+    free(((struct record *)r)->key);
+    free(((struct record *)r)->e);
+    free((struct record *)r);
 }
 
 void freeK(struct keydata *k)
@@ -94,3 +94,11 @@ char *getnowtime()
     *(t + len) = '\0';
     return t;
 }  
+
+void printR(struct record r){
+    printf("%s ", r.key);
+    printf("%ld ", r.time);
+    printf("%lf %lf %lf ", r.x, r.y, r.p);
+    printf("%d ", r.type);
+    printf("%s\n", r.e);
+}

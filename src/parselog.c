@@ -186,7 +186,11 @@ struct log *tklog( char *line )
 	return log;
 }
 
-
+/* 
+ * funtion : 解析来自cormorant的日志，把lu当作一个参数放到map里,留待处理
+ * input   : 一条日志信息
+ * output  : 返回一个log结构，lu的所有信息暂时不做解析
+ */
 struct log *corlog(char *line)
 {
 	//初始化log结构,cormorant的日志没有5个list，初始化只是为了统一free
@@ -266,6 +270,11 @@ struct log *corlog(char *line)
 	return log;
 }
 
+/* 
+ * funtion : 判断传入的字符串是不是全是字符
+ * input   : 用于判断的字符串
+ * output  : 是字符串返回1，不是返回0
+ */
 int isnum(char *s){
     int count = 0;
     while (*s != '\0')
@@ -291,6 +300,11 @@ int isnum(char *s){
     return FALSE;
 }
 
+/* 
+ * function : 解析传入的日志，根据类型的不同用不同的解析方式
+ * input    : 待解析的日志行
+ * output   : 包含日志所有信息的log结构
+ */
 struct log* parseline(char *line, int logtype)
 {	
 	if (logtype == 1)
@@ -321,6 +335,7 @@ int mfilted(char *m){
         return TRUE;
     return FALSE;
 }
+
 //根据公共参数过滤日志
 int pubfilted(char *vs, char *m)
 {
@@ -328,9 +343,10 @@ int pubfilted(char *vs, char *m)
         return TRUE;
 }
 
-
-//根据输入的mcc，mnc等拼接基站id，不做任何其他处理，所以mnc = 01
-//的情况需要提前去掉0
+/*
+ * function : 根据输入的mcc，mnc等拼接基站id，不做任何其他处理，所以mnc = 01
+ *            的情况需要提前去掉0
+ */
 char *catkey(char *mcc, char *mnc, char *lac, char *ci)
 {
     int mcc_len = strlen(mcc);
@@ -357,8 +373,9 @@ char *catkey(char *mcc, char *mnc, char *lac, char *ci)
     return key;
 }
 
-/**计算basekey，如果参数不全，或者不符合日志要求，返回NULL
- * 返回的basekey是新申请的空间需要free
+/*
+ * function : 计算basekey，如果参数不全，或者不符合日志要求，返回NULL
+ *            返回的basekey是新申请的空间需要free
  */
 char *getbkey(char *mcc, char *mnc, char *lac, char *ci, char *vs, char *m)
 {
@@ -387,9 +404,10 @@ char *getbkey(char *mcc, char *mnc, char *lac, char *ci, char *vs, char *m)
     return basekey;
 }
 
-/**拼接计算周边基站的key，由于主基站已经坐过基本参数的判断，所以
- *此处只需要判断lac和ci是否合法，然后返回key，返回的key是重新申请
- *的空间，需要free
+/*
+ * function : 拼接计算周边基站的key，由于主基站已经坐过基本参数的判断，所以
+ *            此处只需要判断lac和ci是否合法，然后返回key，返回的key是重新申请
+ *            的空间，需要free
  */
 char *getnkey(char *mcc, char *mnc, char *lac, char *ci)
 {
@@ -407,8 +425,8 @@ char *getnkey(char *mcc, char *mnc, char *lac, char *ci)
 
 }
 
-/**检查wifi的key是否合法
- *
+/*
+ * funtion : 检查wifi的key是否合法
  */
 int iswkey(char *key)
 {
@@ -419,7 +437,9 @@ int iswkey(char *key)
     return TRUE;
 }
 
-//根据gps信息判断是否要过滤掉
+/*
+ * function :根据gps信息判断是否要过滤掉
+ */
 int gpsfilted(double x,double y,double p){
     if (x >= 180.0 || x <= -180.0 || y >= 90.0 || y <= -90.0 || p > 500)
          return TRUE;
@@ -430,21 +450,15 @@ int gpsfilted(double x,double y,double p){
     return FALSE;
 }
 
+/* 
+ * function : 输出周边信息
+ */
 void printne(struct list *list)
 {
     if (list->size < 2)
         return;
     printf("ne ");
     list_print(list);
-}
-
-void printR(struct record r){
-    s.keynum++;
-    printf("%s ", r.key);
-    printf("%ld ", r.time);
-    printf("%lf %lf %lf ", r.x, r.y, r.p);
-    printf("%d ", r.type);
-    printf("%s\n", r.e);
 }
 
 //得到来自tk日志的结果
@@ -766,7 +780,7 @@ char *getnowtime()
 
 void parselog()
 {
-	printf("start: read log: %s",getnowtime());
+//	printf("start: read log: %s",getnowtime());
 	char *line = (char *)malloc(READ_BUFFER_SIZE);
 //    FILE *fp = fopen("test","r+");
 	while (fgets(line,READ_BUFFER_SIZE,stdin) != NULL)

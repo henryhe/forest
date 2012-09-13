@@ -66,3 +66,5 @@ struct index *createindex();
 void datatoindex(struct index *index, void *data, long dsize);
 
 extern int getfilename(struct flR *flr);
+
+extern void addtoindex(list_e *pre, struct indexR *r);

@@ -10,8 +10,8 @@
  *       Revision:  none
  *       Compiler:  gcc
  *
- *         Author:  YOUR NAME hepan 
- *   Organization:  
+ *         Author:  hepan 
+ *   Organization:  tigerknows 
  *
  * =====================================================================================
  */

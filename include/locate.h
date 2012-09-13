@@ -33,7 +33,7 @@ struct keydata
     struct list *Rlist;
 };
 
-extern void freeR(struct record *r);
+extern void freeR(void *r);
 
 extern void freeK(struct keydata *k);
 
@@ -59,3 +59,5 @@ extern char getkeytype(char *key);
 extern int getint(char *ori, int from , int to);
 
 extern char *getnowtime();
+
+extern void printR(struct record r);
