@@ -1,7 +1,9 @@
 #include "common.h"
 #include "list.h"
 #include "hashmap.h"
+#include "myUtil.h"
 #include "stat.h"
+
 
 #define READ_BUFFER_SIZE 1024*21*5//读入日志行时的最大程度，取决于安卓行为日志的最大长度20K，实际情况发现有最长的
 #define RECORD_SIZE 50//一条记录的长度
@@ -30,6 +32,7 @@ struct record
 struct keydata
 {//一个key对应的一批数据
     char *key;
+    long bsize;
     struct list *Rlist;
 };
 
@@ -37,27 +40,16 @@ extern void freeR(void *r);
 
 extern void freeK(struct keydata *k);
 
-/*
- * function:根据两个指针之间的内容，生成新的字符串，新申请的空间，需要free
- * input   :两个字符指针，start,end;start指向需要内容的第一个字符，end指向末尾字符的后边一个空间
- * output  :返回新生成的字符串，malloc了空间，需要free
- */
-extern char *createstr(char *start, char *end);
-
 /* 
- * function：判断kye的类型
- * args：char *key
- * return:代表类型的字符，b:基站；w:wifi
+ * function ：判断kye的类型
+ * input    ：char *key
+ * output   : 代表类型的字符，b:基站；w:wifi
  */
 extern char getkeytype(char *key);
 
-/* 
- * function:截取一个字符串的子串，转化为int
- * args:char *ori 原始字符串，int from 字串起始位置，int to 字串结束位置
- * return:对应的整数
+/*
+ * function : 打印R的所有信息
+ * input    : 一条位置信息
+ * output   : stdout
  */
-extern int getint(char *ori, int from , int to);
-
-extern char *getnowtime();
-
 extern void printR(struct record r);

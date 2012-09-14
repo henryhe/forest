@@ -35,7 +35,7 @@ void cache_destroy(struct mycache *cache, hfrcb hfr){
 int cache_put(struct mycache *cache, char *key, void *value,int size, hmgcb mg){
     if (cache->bsize + size >= cache->limsize)
         return -1;
-    hmap_put_wcb(cache->mp, key, value, size, mg);//TODO 合并的函数还没写
+    hmap_put_wcb(cache->mp, key, value, size, mg);
     hotthekey(cache, key); 
     cache->bsize += size;
     return size;
@@ -49,7 +49,8 @@ int cache_put(struct mycache *cache, char *key, void *value,int size, hmgcb mg){
  */
 void hotthekey(struct mycache *cache, char *key){
     //处理hotkeylist和keysizelist
-    struct list_e *pre = listnode_create(NULL);//虚拟的头，便于代码编写
+    struct list_e *temp = listnode_create(NULL);//虚拟的头，便于代码编写
+    struct list_e *pre= temp;//虚拟的头，便于代码编写
     pre->next = cache->hotlist->head;
     int index = -1;
     while (pre->next){
@@ -59,25 +60,27 @@ void hotthekey(struct mycache *cache, char *key){
         pre = pre->next;
     }
     if (index < 0 || pre->next == NULL){//hotlist中没有要放入key的情况
-        char *newkey = (char *)malloc(sizeof(newkey) + 1);
+        char *newkey = (char *)malloc(strlen(key));
         strcpy(newkey, key);
         struct list_e *e = listnode_create(newkey);
         list_add(cache->hotlist, e);
     }else{
         list_totail(cache->hotlist, pre, pre->next);
     }
-
+    free(temp);//因为data域为NULL所以直接free即可
 }
 
 void *cache_get(struct mycache *cache, char *key){
-    hotthekey(cache, key);
-    return hmap_get(cache->mp, key);
-
+    void *result = hmap_get(cache->mp, key);
+    if (result != NULL)
+        hotthekey(cache, key);
+    return result;
 }
 
 int cache_wtoD(struct mycache *cache, char *path, float fra){
     return 0;
 }
+
 int cmain()
 {
     printf("hello world ,I am hp cache\n");

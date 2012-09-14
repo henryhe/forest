@@ -92,6 +92,7 @@ void datatoindex(struct index *index, void *data, long dsize){
 struct index *loadindex(char *path){
     FILE *in = fopen(path,"rb");
     struct index *index = createindex();
+    index->path = path;
     void *data = malloc(readRnum * indexRsize);
     while (TRUE){
         int readsize = fread(data, readRnum * indexRsize, 1, in);
@@ -113,6 +114,7 @@ void freeindexR(struct indexR *r){
 
 void freeindex(struct index *index){
     list_destroy(index->list, freeindexR);
+    free(index->path);
     free(index);
 }
 
@@ -169,7 +171,11 @@ void printindexR(struct indexR *r){
     printf("%s %d %d %c\n", r->key, r->filename, r->offset, r->flag);
 }
 
-int main(){
+struct flR *readflR(struct index *index, struct indexR *r){
+    return NULL;
+}
+
+int fmain(){
     printf("hello world,i am hp flrfs\n");
     int i;
     struct list *list = list_create();
@@ -188,7 +194,7 @@ int main(){
         list_add(index.list,e);
     }
     printf("start to write.\n");
-    printf("time %s\n",getnowtime());
+    printf("time %s\n", getnowtime());
     saveindex(index.list, "temp");
     printf("time %s\n",getnowtime());
     list_destroy(index.list,freeindexR);

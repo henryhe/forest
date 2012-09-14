@@ -17,7 +17,6 @@
  */
 #include "common.h"
 #include "list.h"
-#include "locate.h"
 
 #ifndef flrfs_include_flag
 
@@ -37,14 +36,14 @@ struct indexR{
 };
 
 struct index{
+    char *path;
     struct list *list;
     long size;
 };
 
-struct flR{
+struct fR{
     char *key;
-    int num;
-    struct list *dlist;
+    void *data;
 };
 
 extern int saveindex(struct list *index,char *path);
@@ -53,9 +52,9 @@ extern struct index *loadindex(char *path);
 
 extern struct list_e *locatekey(char *key, struct index *index);
 
-extern struct flR *readflR(struct indexR *r);
+extern struct fR *flr_read(struct index *index, char *key);
 
-extern int writeflR(struct indexR *r);
+extern int writefR(struct index *index, struct indexR *r);
 
 extern int writeflRs(struct list *list,struct index *index);
 
@@ -65,6 +64,6 @@ struct index *createindex();
 
 void datatoindex(struct index *index, void *data, long dsize);
 
-extern int getfilename(struct flR *flr);
+extern int getfilename(struct fR *fr);
 
-extern void addtoindex(list_e *pre, struct indexR *r);
+extern void addtoindex(struct list_e *pre, struct indexR *r);

@@ -58,15 +58,15 @@ void list_add( struct list *list,struct list_e *node )
 	list->size ++;
 }
 
-struct list_e *listnode_create( void *data )
+struct list_e *listnode_create(void *data)
 {
-	struct list_e *node = ( struct list_e * )malloc( sizeof( struct list_e ) );
+	struct list_e *node = (struct list_e *)malloc(sizeof( struct list_e));
 	node->next = NULL;
 	node->data = data;
 	return node;
 }
 
-size_t list_size( const struct list *list )
+size_t list_size(const struct list *list)
 {
 	return list->size;
 }
@@ -127,9 +127,15 @@ void list_clear(struct list *list)
 }
 
 void list_totail(struct list *list,struct list_e *pre, struct list_e *e){
+    //e本来就在尾部
     if (e == NULL || e->next == NULL)
         return;
-    pre->next = e->next;
+    //e在头部
+    if (pre == NULL || list->head == e)
+        list->head = e->next;
+    else
+        pre->next = e->next;
+    list->tail->next = e;
     list->tail = e;
     e->next = NULL;
 }
@@ -148,10 +154,10 @@ int lmain(){
 		{
 			char *p = (char *) malloc(10);
 			strcpy(p,"123456789\0");
-			struct list_e* e = listnode_create( p );
-			list_add( list, e);
+			struct list_e *e = listnode_create(p);
+			list_add(list, e);
 		}
-		list_print( list );
+		list_print(list);
 		list_destroy(list, NULL);
 	}
 
