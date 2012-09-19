@@ -17,4 +17,12 @@
  */
 #include "common.h"
 
-#include "locate.h"
+#include "myUtil.h"
+
+static int log_level = 0;
+
+extern void log_error(char *s);
+
+//extern static void log_debug(char *s);
+
+extern void log_info(char *s);

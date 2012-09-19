@@ -4,10 +4,13 @@
 #include "myUtil.h"
 #include "stat.h"
 
+#ifndef locate_include_flag
 
-#define READ_BUFFER_SIZE 1024*21*5//读入日志行时的最大程度，取决于安卓行为日志的最大长度20K，实际情况发现有最长的
-#define RECORD_SIZE 50//一条记录的长度
+#define READ_BUFFER_SIZE 1024*21*5//读入日志行时的最大程度，取决于安卓行为日志的最大长度20K，实际情况发现有更长的
+#define RECORD_SIZE 80//一条记录的长度
 #define RECORD_LIM 30000000//同时在内存的入基站，wifi信息的上限
+
+static int rdatasize = sizeof(long) + sizeof(double) * 3 + sizeof(int);//一个key对应的每条位置信息的大小
 
 struct log
 {//一条log的结构
@@ -24,21 +27,31 @@ struct record
 {//一条有效的记录
 	long time;//提交时间
 	char *key;//基站或者wifi的key
+	float x,y,p;//此条日志提交的gps坐标，和精度
+	int type;//类型，wifi为0，主基站为1，其他基站为2
+    double pro;//正确度，保留字段
+	char *e;
+};
+
+struct pdata 
+{//一条位置信息
+	long time;//提交时间
 	double x,y,p;//此条日志提交的gps坐标，和精度
 	int type;//类型，wifi为0，主基站为1，其他基站为2
-	char *e;
+    double pro;//正确度，保留字段
 };
 
 struct keydata
 {//一个key对应的一批数据
     char *key;
     long bsize;
-    struct list *Rlist;
+    struct list *list;
 };
+#endif
 
-extern void freeR(void *r);
+extern int freeR(void *w);
 
-extern void freeK(struct keydata *k);
+extern int freeKD(void *t);
 
 /* 
  * function ：判断kye的类型

@@ -150,9 +150,9 @@ void hmap_put(struct hmap *mp, char *key, void * value)
     mp->size++;
 }
 
-int hmap_put_wcb(struct hmap *mp, char *key, void * value, int bsize, hmgcb mg)
+int hmap_put_wcb(struct hmap *mp, char *key, void *value, int bsize, hfrcb fr)
 {
-    if (mg == NULL)
+    if (fr == NULL)
         return 0;
     int key_len = strlen(key);
 	assert(key && key_len>0);
@@ -162,7 +162,8 @@ int hmap_put_wcb(struct hmap *mp, char *key, void * value, int bsize, hmgcb mg)
 	struct hmap_e *e  = hmap_get_e(mp, key);
 	if (e != NULL)
 	{   
-        *(mp->khsizes[hash]) -= (*mg)(value, e->value);
+        *(mp->khsizes[hash]) -= (*fr)(e->value);
+        e->value = value;
         *(mp->khsizes[hash]) += bsize;
 		return 1;
 	}
@@ -191,8 +192,9 @@ void *hmap_get(struct hmap *mp, char *key)
 	return NULL;
 }
 
-void ftestfree(void *data){
+int ftestfree(void *data){
     free(data);
+    return 0;
 }
 
 

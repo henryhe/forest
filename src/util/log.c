@@ -17,12 +17,13 @@
  */
 #include "../../include/log.h"
 
-static void log_info(char *s){
-    printf("%s [INFO] : %s",getnowtime(),s);
+void log_info(char *s){
+    printf("%s [INFO] : %s\n",getnowtime(), s);
 }
 
-void main(){
+void log_error(char *s){
+    printf("%s [ERROR] : %s\n",getnowtime(), s);
+}
+void lomain(){
     printf("hp log\n");
-    log_info("hahahah\n");
-}
-
+    log_info("hahahah\n"); } 

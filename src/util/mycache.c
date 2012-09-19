@@ -32,10 +32,10 @@ void cache_destroy(struct mycache *cache, hfrcb hfr){
     free(cache);
 }
 
-int cache_put(struct mycache *cache, char *key, void *value,int size, hmgcb mg){
+int cache_put(struct mycache *cache, char *key, void *value,int size, hfrcb fr){
     if (cache->bsize + size >= cache->limsize)
         return -1;
-    hmap_put_wcb(cache->mp, key, value, size, mg);
+    hmap_put_wcb(cache->mp, key, value, size, fr);
     hotthekey(cache, key); 
     cache->bsize += size;
     return size;

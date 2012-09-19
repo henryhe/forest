@@ -29,7 +29,7 @@ extern struct mycache *cache_create(int limsize, long bsize);
 
 extern void cache_destroy(struct mycache *cache, hfrcb hfr);
 
-extern int cache_put(struct mycache *cache, char *key, void *value, int size, hmgcb mg);
+extern int cache_put(struct mycache *cache, char *key, void *value, int size, hfrcb fr);
 
 extern void *cache_get(struct mycache *cache, char *key);
 

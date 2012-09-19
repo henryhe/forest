@@ -17,16 +17,31 @@
  */
 #include "../include/locate.h"
 
-void freeR(void *r)
+int freeR(void *t)
 {
-    free(((struct record *)r)->key);
-    free(((struct record *)r)->e);
-    free((struct record *)r);
+    struct record *r = (struct record *)t;
+    if (r->key != NULL)
+        free(r->key);
+    if (r->e != NULL)
+        free(r->e);
+    free(r->e);
+    free(r);
+    return 0;
 }
 
-void freeK(struct keydata *k)
+/* 
+ * function : 释放keydata结构
+ * input    : keydata结构
+ * output   ：所释放的keydata所占内存大小 
+ */
+int freeKD(void *t)
 {
-  free(k->key);
+  struct keydata *kd = (struct keydata *)t;
+  int size = kd->bsize;
+  free(kd->key);
+  list_destroy(kd->list, freeR);
+  free(kd);
+  return size;
 }
 
 /* 
@@ -52,7 +67,7 @@ char getkeytype(char *key)
 
 /*
  * function : 打印R的所有信息
- * input    : 一条位置信息
+ * input    : 一条位置信息的结构
  * output   : stdout
  */
 void printR(struct record r){
@@ -61,4 +76,17 @@ void printR(struct record r){
     printf("%lf %lf %lf ", r.x, r.y, r.p);
     printf("%d ", r.type);
     printf("%s\n", r.e);
+}
+
+/*
+ * function : 打印R的所有信息
+ * input    : 指向一条位置信息结构的指针
+ * output   : stdout
+ */
+void printRp(struct record *r){
+    printf("%s ", r->key);
+    printf("%ld ", r->time);
+    printf("%lf %lf %lf ", r->x, r->y, r->p);
+    printf("%d ", r->type);
+    printf("%s\n", r->e);
 }

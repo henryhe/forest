@@ -397,7 +397,7 @@ char *getbkey(char *mcc, char *mnc, char *lac, char *ci, char *vs, char *m)
         return NULL;
     //拼接基站key
     //由于mnc提交上来的参数有些有0所以重新生成
-    char *f_mnc = (char *)malloc(strlen(mnc));
+    char *f_mnc = (char *)malloc(strlen(mnc) + 1);
     sprintf(f_mnc,"%d",i_mnc);
     char *basekey = catkey(mcc,f_mnc,lac,ci);
     free(f_mnc);

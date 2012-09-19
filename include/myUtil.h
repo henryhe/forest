@@ -37,3 +37,24 @@ extern int getint(char *ori, int from , int to);
  * output   : 字符串返回
  */
 extern char *getnowtime();
+
+/* 
+ * function : 拼接两个字符串
+ * input    : 需要拼接的两个字符串，按参数位置拼接
+ * output   ：拼好的新申请空间存放的字符串
+ */
+extern char *mystrcat(char *s1, char *s2);
+
+/*
+ * function : 得到整数的位数
+ * input    : 要计算的数字
+ * output   : 得到的位数
+ */
+extern int getdigitnum(int i);
+
+/* 
+ * function : 整数转化为字符串
+ * input    : 需要转化的整数
+ * output   : 结果字符串
+ */
+extern char *myitoa(int i);

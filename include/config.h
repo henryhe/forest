@@ -21,9 +21,9 @@
 static const char FLRPATH[8] = "FLRPATH\0";
 
 struct config{
-    char *FLRPATH;
+    char *flrpath;
 };
 
 
-
+extern struct config *loadconfig();
 

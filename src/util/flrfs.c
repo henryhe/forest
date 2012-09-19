@@ -29,8 +29,8 @@ int saveindex(struct list *list, char *path){
     struct list_e *e = list->head;
     while (e) {
         struct indexR *r = (struct indexR *)e->data;
-        memcpy(flag, r->key, keysize);
-        flag += keysize;
+        memcpy(flag, r->key,FKEY_SIZE);
+        flag += FKEY_SIZE;
         memcpy(flag, &(r->filename),sizeof(int));
         flag += sizeof(int);
         memcpy(flag, &(r->offset),sizeof(int));
@@ -65,23 +65,20 @@ void datatoindex(struct index *index, void *data, long dsize){
     long sizeflag = 0;
     void *pos = data;
     while (sizeflag < indexRsize * readRnum){
-        char *key = createstr(pos, pos + keysize);
-        pos += keysize ;
-        int *f = (int *)malloc(sizeof(int));
-        memcpy(f, pos, sizeof(int));
-        pos += sizeof(int);
-        int *o = (int *)malloc(sizeof(int));
-        memcpy(o, pos, sizeof(int));
-        pos += sizeof(int);
-        char *fl = (char *)malloc(sizeof(char));
-        memcpy(fl, pos, sizeof(char));
-        pos += sizeof(char);
-        struct indexR *r = createindexR(key, *f, *o, *fl);
+        struct indexR *r = (struct indexR *)malloc(sizeof(struct indexR));
+        char *key = createstr(pos, pos + FKEY_SIZE);
+        r->key = key;
+        pos += FKEY_SIZE;
+        int size = sizeof(int);
+        memcpy(&(r->filename), pos, size);
+        pos += size;
+        memcpy(&(r->offset), pos, size);
+        pos += size;
+        size = sizeof(char);
+        memcpy(&(r->flag), pos, size);
+        pos += size;
         struct list_e *e = listnode_create(r);
         list_add(index->list, e);
-        free(f);
-        free(o);
-        free(fl);
         sizeflag += indexRsize;
     }
     index->size += dsize;
@@ -171,8 +168,72 @@ void printindexR(struct indexR *r){
     printf("%s %d %d %c\n", r->key, r->filename, r->offset, r->flag);
 }
 
-struct flR *readflR(struct index *index, struct indexR *r){
+/* 
+ * function : 读取输入key的已有数据
+ * intput   : flr文件存放路径，对应的index，目标key
+ * output   ：包含key和data域的fR结构(data中未包含key)
+ */
+struct fR *flr_read(char *flrpath, struct index *index, char *key){
+    struct indexR *ir = (struct indexR *)(locatekey(key, index)->data);
+    if (strcmp(key, ir->key) != 0)
+        return NULL;
+    char *fn = myitoa(ir->filename);
+    char *path = mystrcat(flrpath, fn);
+    FILE *f = fopen(path, "ab+");
+    fseek(f, ir->offset, SEEK_SET);
+    void *raw = malloc(ir->filename);
+    fread(raw, ir->filename, 1, f);
+    fseek(f, ir->offset + ir->filename - 1, SEEK_SET);
+    char flag = DEAD;
+    fwrite(&flag, 1, 1, f);
+    fclose(f);
+    free(path);
+    free(fn);
+    int size = 0;
+    void *pos = raw;
+    while (size < ir->filename){
+        if (*(char *)pos == pdtail){
+            void *re = malloc(size + 1);
+            memcpy(re, raw + FKEY_SIZE, size + 1);
+            free(raw);
+            return re;
+        }
+    }
+    //结尾不是约定的字符，不返回结果
     return NULL;
+}
+
+/* 
+ * function : 写入输入key的传入数据
+ * intput   :
+ * flr文件存放路径，对应的index，需要写入的key，需要写入的data数据（包含了key，是可以直接写入的data）
+ * output   ：包含key和data域的fR结构
+ */
+int flr_write(char *flrpath, struct index *index, char *key, void *data){
+    int size = sizeof(data);
+    char *tar  = locatekey(key);
+    int filename = getfilename(size);
+    if (strcmp(tar, key) != 0){
+        //加入index
+    }else{
+        //更新index
+    }
+    //写入文件
+    
+}
+
+/* 
+ * function : 根据传入的size得到正确的文件名
+ * input    : 记录所占空间
+ * output   : 正确的文件名字 
+ */
+int getfilename(int size){
+    int i;
+    for (i = 0; i < FILENUM; i++){
+        if( size < fnames[i])
+            return fnames[i];
+    }
+    return fnames[FILENUM -1];
 }
 
 int fmain(){
@@ -184,8 +245,8 @@ int fmain(){
     index.size = 0;
     for(i = 0; i < readRnum; i++){
         struct indexR *r = (struct indexR *)malloc(sizeof(struct indexR));
-        char *key = (char *)malloc(keysize);
-        memcpy(key,"460.0.123.3",keysize);
+        char *key = (char *)malloc(FKEY_SIZE);
+        memcpy(key,"460.0.123.3",FKEY_SIZE);
         r->key = key;
         r->filename = 51200000;
         r->offset = 10241024;
@@ -194,9 +255,9 @@ int fmain(){
         list_add(index.list,e);
     }
     printf("start to write.\n");
-    printf("time %s\n", getnowtime());
+//    printf("time %s\n", getnowtime());
     saveindex(index.list, "temp");
-    printf("time %s\n",getnowtime());
+//    printf("time %s\n",getnowtime());
     list_destroy(index.list,freeindexR);
     printf("write end.\n");
     struct index *index1 = loadindex("temp");

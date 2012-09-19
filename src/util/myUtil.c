@@ -65,5 +65,45 @@ char *getnowtime()
     memcpy(t, s, len - 1);
     *(t + len) = '\0';
     return t;
-}  
+}
 
+/* 
+ * function : 拼接两个字符串
+ * input    : 需要拼接的两个字符串，按参数位置拼接
+ * output   ：拼好的新申请空间存放的字符串
+ */
+char *mystrcat(char *s1, char *s2){
+    int len1 = strlen(s1);
+    char *s = (char *)malloc(len1 + strlen(s2) + 1);
+    memcpy(s, s1, len1);
+    strcat(s, s2);
+    return s;
+}
+
+/* 
+ * function : 得到整数的位数
+ * input    : 要计算的数字
+ * output   : 得到的位数
+ */
+int getdigitnum(int i){
+    if (i == 0)
+        return 1;
+    int counter = 0;
+    while (i != 0){
+        i = i/10;
+        counter++;
+    }
+    return counter;
+}
+
+/* 
+ * function : 整数转化为字符串
+ * input    : 需要转化的整数
+ * output   : 结果字符串
+ */
+char *myitoa(int i){
+    int len = getdigitnum(i);
+    char *s = (char *)malloc(len + 1);
+    sprintf(s, "%d", i);
+    return s;
+}

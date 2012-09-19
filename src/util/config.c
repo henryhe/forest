@@ -42,21 +42,22 @@ struct config *loadconfig(){
             end++;
        }
        if(strcmp(key, FLRPATH) == 0)
-           config->FLRPATH = value;
+           config->flrpath = value;
        free(key);
        free(path);
        free(line);
-       return config;
    }
+   fclose(f);
+   return config;
 }
 
 void config_destroy(struct config *config){
-    free(config->FLRPATH);
+    free(config->flrpath);
     free(config);
 }
 
 void comain(){
     struct config *config = loadconfig();
-    printf("%s\n",config->FLRPATH);
+    printf("%s\n",config->flrpath);
     config_destroy(config);
 }

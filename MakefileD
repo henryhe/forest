@@ -1,5 +1,5 @@
-prodata: prodata.o mycache.o locate.o hashmap.o list.o myUtil.o flrfs.o
-	gcc -o build/prodata build/mycache.o build/locate.o build/prodata.o build/hashmap.o build/list.o build/myUtil.o build/flrfs.o
+prodata: prodata.o mycache.o locate.o hashmap.o list.o myUtil.o flrfs.o log.o config.o
+	gcc -o build/prodata build/mycache.o build/locate.o build/prodata.o build/hashmap.o build/list.o build/myUtil.o build/flrfs.o build/log.o build/config.o
 
 prodata.o: src/prodata.c include/locate.h
 	gcc -o build/prodata.o -c src/prodata.c
@@ -21,3 +21,9 @@ myUtil.o: src/util/myUtil.c include/myUtil.h
 
 flrfs.o: src/util/flrfs.c include/flrfs.h
 	gcc -o build/flrfs.o  -c src/util/flrfs.c
+
+log.o: src/util/log.c include/log.h
+	gcc -o build/log.o  -c src/util/log.c
+
+config.o: src/util/config.c include/config.h
+	gcc -o build/config.o  -c src/util/config.c
