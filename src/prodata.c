@@ -120,7 +120,7 @@ struct pdata *toP(void *data){
     size = sizeof(double);
     memcpy(&(p->pro), pos, size);
     pos += size;
-    if (*(char *)pos != pdtail){
+    if (*(char *)pos != flrtail){
         log_error("run read in data");
         return NULL;
     }
@@ -168,7 +168,7 @@ struct keydata *mergeKD(struct keydata *kd, struct record *r){
     r->key = NULL;
     free(r->e);
     r->e = NULL;
-    struct list_e *e = list_create(r);
+    struct list_e *e = listnode_create(r);
     list_add(kd->list, e);
     kd->bsize += rdatasize;
     return kd;

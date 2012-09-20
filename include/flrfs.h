@@ -26,14 +26,18 @@
 
 #define FKEY_SIZE 30
 
-#define pdtail '#'
+#define flrtail '#'
 
 #define LIVE 'l'
 
 #define DEAD 'd'
 
+//一共有多少个用于存储的定长文件
 #define FILENUM 6
 
+#define AVAI '1'
+
+#define UNAVAI '0'
 #endif
 
 struct indexR{
@@ -55,8 +59,6 @@ struct fR{
 };
 
 static int fnames[FILENUM] = {128, 256, 512, 1024, 2048,4096};
-
-static int frs[FILENUM] = {0, 0, 0, 0, 0, 0};
 
 extern int saveindex(struct list *index,char *path);
 

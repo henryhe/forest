@@ -169,35 +169,66 @@ void printindexR(struct indexR *r){
 }
 
 /* 
+ * function : 根据flr的path和int型的文件名，生成读取文件的路径
+ * input    : flr的path和int型文件名
+ * output   ：读取文件的路径  
+ */
+char *getfilepath(char *flrpath, int filename){
+    char *fn = myitoa(filename);
+    char *path = mystrcat(flrpath, fn);
+    free(fn);
+    free(path);
+    return path;
+
+}
+
+/* 
+ * function : 将传入的数据扩展到定长的长度
+ * input    ：传入的数据，应该是包括了所有信息的2进制流，
+ *            只需要在末尾加上结尾的符号 
+ * output   : 合适长度的data
+ */
+void *expanddata(int length, void *data){
+    int size = sizeof(data);
+    if (length == size)
+        return data;
+    void *res = malloc(length);
+    memcpy(res, data, size);
+    void *pos = res + size;
+    memset(pos, flrtail, length -size);
+    free(data);
+    return res;
+}
+
+/* 
  * function : 读取输入key的已有数据
  * intput   : flr文件存放路径，对应的index，目标key
  * output   ：包含key和data域的fR结构(data中未包含key)
  */
 struct fR *flr_read(char *flrpath, struct index *index, char *key){
     struct indexR *ir = (struct indexR *)(locatekey(key, index)->data);
-    if (strcmp(key, ir->key) != 0)
+    if (strcmp(key, ir->key) != 0)//文件系统中没有此key的数据
         return NULL;
-    char *fn = myitoa(ir->filename);
-    char *path = mystrcat(flrpath, fn);
-    FILE *f = fopen(path, "ab+");
+    char *path = getfilepath(flrpath, ir->filename);
+    FILE *f = fopen(path, "rb+");
     fseek(f, ir->offset, SEEK_SET);
     void *raw = malloc(ir->filename);
     fread(raw, ir->filename, 1, f);
     fseek(f, ir->offset + ir->filename - 1, SEEK_SET);
     char flag = DEAD;
     fwrite(&flag, 1, 1, f);
-    fclose(f);
     free(path);
-    free(fn);
+    fclose(f);
     int size = 0;
     void *pos = raw;
     while (size < ir->filename){
-        if (*(char *)pos == pdtail){
+        if (*(char *)pos == flrtail){
             void *re = malloc(size + 1);
             memcpy(re, raw + FKEY_SIZE, size + 1);
             free(raw);
             return re;
         }
+        size++;
     }
     //结尾不是约定的字符，不返回结果
     return NULL;
@@ -205,21 +236,50 @@ struct fR *flr_read(char *flrpath, struct index *index, char *key){
 
 /* 
  * function : 写入输入key的传入数据
- * intput   :
- * flr文件存放路径，对应的index，需要写入的key，需要写入的data数据（包含了key，是可以直接写入的data）
+ * intput   :flr文件存放路径，对应的index，需要写入的key，
+ *           需要写入的data数据（包含了key，是可以直接写入的data）
  * output   ：包含key和data域的fR结构
  */
 int flr_write(char *flrpath, struct index *index, char *key, void *data){
     int size = sizeof(data);
-    char *tar  = locatekey(key);
+    struct list_e *tar  = locatekey(key, index);
+    char *tarkey = ((struct indexR *)(tar->data))->key;
     int filename = getfilename(size);
-    if (strcmp(tar, key) != 0){
-        //加入index
+    char *path = getfilepath(flrpath, filename);
+    data = expanddata(filename, data);
+    if (strcmp(tarkey, key) != 0){
+        //创建新的index节点
+        struct indexR *ir = (struct indexR *)malloc(sizeof(struct indexR));
+        ir->key = key;
+        ir->filename = filename;
+        ir->flag = AVAI;
+        //写入文件系统
+        FILE *fp = fopen(path, "rb+");
+        fseek(fp, 0L, SEEK_END);
+        ir->offset = ftell(fp);
+        fwrite(data, filename, 1, fp);
+        fclose(fp);
+        struct list_e *e = listnode_create(ir);
+        struct list_e *n = tar->next;
+        tar->next = e;
+        e->next = n;      
     }else{
+        struct indexR *ir = (struct indexR *)tar->data;
         //更新index
+        FILE *fp = fopen(path, "rb+");
+        if (filename == ir->filename){//还在原来的flr文件
+            fseek(fp, ir->offset, SEEK_SET);
+            fwrite(data, filename, 1, fp);
+        }else{//移动到其他文件
+            ir->filename = filename;
+            fseek(fp, 0L, SEEK_END);
+            ir->offset = ftell(fp);
+            fwrite(data, filename, 1, fp);
+        }
+        fclose(fp);
     }
+    free(path);
     //写入文件
-    
 }
 
 /* 
@@ -230,7 +290,7 @@ int flr_write(char *flrpath, struct index *index, char *key, void *data){
 int getfilename(int size){
     int i;
     for (i = 0; i < FILENUM; i++){
-        if( size < fnames[i])
+        if( size <= fnames[i])
             return fnames[i];
     }
     return fnames[FILENUM -1];
