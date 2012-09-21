@@ -24,9 +24,11 @@
 
 #define readRnum 10
 
-#define FKEY_SIZE 30
-
+#define FKEY_LENGTH 30
+//定长文件每条记录的结尾，及填充字符
 #define flrtail '#'
+
+#define keytail '$'
 
 #define LIVE 'l'
 

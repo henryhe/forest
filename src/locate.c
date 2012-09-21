@@ -26,7 +26,12 @@ int freeR(void *t)
         free(r->e);
     free(r->e);
     free(r);
-    return 0;
+    return 1;
+}
+
+int freeP(void *t){
+    struct pdata *p = (struct pdata *)t;
+    free(p);
 }
 
 /* 
@@ -39,7 +44,7 @@ int freeKD(void *t)
   struct keydata *kd = (struct keydata *)t;
   int size = kd->bsize;
   free(kd->key);
-  list_destroy(kd->list, freeR);
+  list_destroy(kd->list, freeP);
   free(kd);
   return size;
 }

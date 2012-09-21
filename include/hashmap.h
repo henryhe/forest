@@ -18,12 +18,10 @@ struct hmap_e{
 struct hmap{
 	long size;
     int hsize;
-    int **khsizes;
 	struct hmap_e **em;
 };
-
+//释放hmap中value的回调函数
 typedef int (*hfrcb)(void *);
-
 #endif
 
 extern struct hmap_e *hmap_e_create(char *key, void *value);
@@ -39,6 +37,10 @@ int hmap_key_destroy(struct hmap_e *es, hfrcb fr);
 
 extern void hmap_put(struct hmap *mp, char *key, void *value);
 
-extern int hmap_put_wcb(struct hmap *mp, char *key, void * value, int bsize, hfrcb fr);
+extern int hmap_put_wcb(struct hmap *mp, char *key, void * value, hfrcb fr);
 
 extern void *hmap_get(struct hmap *mp, char *key);
+
+extern struct hmap_e  *hmap_get_e(struct hmap *mp, char *key);
+
+extern struct hmap_e *hmap_del(struct hmap *mp, char *key);

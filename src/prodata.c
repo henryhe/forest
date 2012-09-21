@@ -98,6 +98,22 @@ struct record *stoR(char *s){
 }
 
 /* 
+ * function : 将record结构转化为可直接存储得的pdata结构，并释放之前的record
+ * input    : record结构
+ * output   ：对应pdata结构
+ */
+struct pdata *RtoP(struct record *r){
+    struct pdata *p = (struct pdata *)malloc(sizeof(struct pdata));
+    p->time = r->time;
+    p->x = r->x;
+    p->y = r->y;
+    p->p = r->p;
+    p->pro = 1.0;    
+    freeR(r);
+    return p;
+}
+
+/* 
  * function : 将一个排列好的内存块转化为pdata结构
  * input    : 指向排列好的内存块指针
  * output   : pdata结构 */
@@ -160,17 +176,16 @@ struct keydata *toKD(char *key, struct fR *fr){
 
 /*
  * function : 合并keydata和新的record
- * input    : keydata 和 record,无需在外部free掉新的record 
+ * input    : keydata 和 record,无需在外部free掉新的record,更新cache的bsize
  * output   : 新的keydata
  */
-struct keydata *mergeKD(struct keydata *kd, struct record *r){
-    free(r->key);
-    r->key = NULL;
-    free(r->e);
-    r->e = NULL;
-    struct list_e *e = listnode_create(r);
+struct keydata *mergeKD(struct keydata *kd, struct record *r, struct mycache *cache){
+    struct pdata *p = RtoP(r);
+    struct list_e *e = listnode_create(p);
     list_add(kd->list, e);
     kd->bsize += rdatasize;
+    cache->bsize += rdatasize;
+    freeR(r);
     return kd;
 }
 
@@ -181,11 +196,9 @@ struct keydata *mergeKD(struct keydata *kd, struct record *r){
  */
 struct keydata *createKD(struct record *r){
     struct keydata *kd = (struct keydata *)malloc(sizeof(struct keydata));
-    kd->key = r->key;
-    r->key = NULL;
-    r->e = NULL;
+    struct pdata *p = RtoP(r);
     kd->bsize = rdatasize;
-    struct list_e *e = listnode_create(r);
+    struct list_e *e = listnode_create(p);
     list_add(kd->list, e);
     return kd;
 }
@@ -206,16 +219,95 @@ struct fR *readKD(char *flrpath, struct index *index, struct record *r){
  * input    : 对应flrfs系统的index，目标record
  * output   : 对应key的最新数据
  */
-struct keydata *getKD(char *flrpath, struct index *index, struct record *r){
+struct keydata *getKD(char *flrpath, struct index *index, struct record *r, struct mycache *cache){
     struct fR *fr = readKD(flrpath,index, r);
     if (fr != NULL){
         struct keydata *kd = toKD(r->key, fr);
         if (kd == NULL)
             return createKD(r);
-        return mergeKD(kd, r);
+        return mergeKD(kd, r, cache);
     }
     return createKD(r);
 }
+
+/* function : 将keydata转化为准备写入flr文件的2进制流,包含key的拓宽到定长，不包含整个数据流的拓展
+ * input    : keydata
+ * output   : 对应的2进制流 */
+void *KtoB(struct keydata *k){
+    int expectsize =  k->bsize + FKEY_LENGTH + 2;
+    void *data = malloc(expectsize);
+    void *pos =data;
+    int count = 0;
+    int size = strlen(k->key);
+    memcpy(pos, k->key, size);
+    pos += size;
+    memset(pos, keytail, FKEY_LENGTH - size);
+    pos += FKEY_LENGTH - size;
+    count = FKEY_LENGTH;
+    char temp = LIVE; 
+    memcpy(pos, &temp, 1);
+    pos++;
+    count++;
+    struct list_e *e = k->list->head;
+    while (e){
+        struct pdata *p = (struct pdata *)e->data;
+        
+        size = sizeof(long);
+        memcpy(pos, &(p->time), size);
+        pos += size;
+        count += size;
+        
+        size = sizeof(float);
+        memcpy(pos, &(p->x), size);
+        pos += size;
+        memcpy(pos, &(p->y), size);
+        pos += size;
+        memcpy(pos, &(p->p), size);
+        pos += size;
+        count += size * 3;
+        
+        size = sizeof(double);
+        memcpy(pos, &(p->pro), size);
+        pos += size;
+        count += size;
+
+        free(p);
+    }
+   if (count != expectsize){
+       char *s = mystrcat("size not match when write to flr :", k->key);
+       log_error(s);
+       free(s);
+       return NULL;
+   }  
+   return data;
+}
+
+/* 
+ * function : 将从cache里边换出的数据写入到flr
+ * input    ：由keydata组成的list 
+ * output   : 无，拼接为数据流，写入到硬盘
+ */
+void writetoflr(char *flrpath, struct index *index, struct list *list){
+    struct list_e *e = list->head;
+    while (e){
+        struct keydata *k = (struct keydata *)e->data;
+        void *data =  KtoB(k);
+        flr_write(flrpath, index, k->key,data);
+        free(data);
+        e = e->next;
+    }
+}
+
+/* 
+ * function : 计算一个keydata的占用空间
+ * input    : keydata
+ * output   : 占用空间大小*/
+
+int sizeofK(void *t){
+    struct keydata *k = (struct keydata *)t;
+    return strlen(k->key) + sizeof(k->bsize) + k->list->size * sizeof(struct pdata);
+}
+
 
 struct mycache *prodata()
 {
@@ -234,10 +326,15 @@ struct mycache *prodata()
         printRp(r);
         struct keydata *kd = (struct keydata *)cache_get(cache, r->key);
         if (kd == NULL){
-            kd = getKD(config->flrpath,index, r);
-            cache_put(cache, r->key, kd, kd->bsize,freeKD);
+            kd = getKD(config->flrpath,index, r, cache);
+            if(cache_put(cache, r->key, kd, kd->bsize,freeKD) == -1 ){
+                struct list *temp = cache_kickout(cache, config->flrpath, 0.5, sizeofK);
+                writetoflr(config->flrpath, index, temp);
+                list_destroy(temp, freeKD);
+                cache_put(cache, r->key, kd, kd->bsize,freeKD); 
+            };
         }else
-            mergeKD(kd, r);
+            mergeKD(kd, r, cache);
     }
     fclose(f);
     config_destroy(config);

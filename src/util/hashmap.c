@@ -14,13 +14,9 @@ struct hmap *hmap_create()
 	struct hmap *mp = (struct hmap *)malloc(sizeof(struct hmap));
 	mp->size = 0;
     mp->hsize = KEY_SIZE;
-    mp->khsizes = (int **)calloc(KEY_SIZE, sizeof(int *));
     mp->em = (struct hmap_e **)calloc(KEY_SIZE, sizeof(struct hmap_e *));
 	int i;
 	for(i = 0; i < mp->hsize; i++){
-        int *p = (int *)malloc(sizeof(int));
-        *p = 0;
-        mp->khsizes[i] = p;
 		mp->em[i] = NULL;
     }
 	return mp;
@@ -31,13 +27,9 @@ struct hmap *hmap_create_ws(int hsize)
 	struct hmap *mp = (struct hmap *)malloc(sizeof(struct hmap));
 	mp->size = 0;
     mp->hsize = hsize;
-    mp->khsizes = (int **)calloc(hsize, sizeof(int *));
     mp->em = (struct hmap_e **)calloc(hsize, sizeof(struct hmap_e *));
 	int i;
 	for(i = 0; i < mp->hsize; i++){
-        int *p = (int *)malloc(sizeof(int));
-        *p = 0;
-        mp->khsizes[i] = p;
 		mp->em[i] = NULL;
     }
 	return mp;
@@ -66,9 +58,7 @@ void hmap_destroy(struct hmap *mp, hfrcb fr)
 	int i;
 	for(i = 0; i < mp->hsize; i++){
 		mp->size -= hmap_key_destroy(mp->em[i], fr);
-        free(mp->khsizes[i]);
     }
-    free(mp->khsizes);
     free(mp->em);
 	assert(mp->size == 0);
 	free(mp);
@@ -106,21 +96,6 @@ static long hash_string(const char *key, int len)
 	return h;
 }
 
-struct hmap_e *hmap_get_e(struct hmap *mp, char *key)
-{
-	int key_len = strlen(key);
-	assert(key && key_len>0);
-	long hash = hash_string(key,key_len) % (mp->hsize);
-	struct hmap_e *e = mp->em[hash];
-	while (e)
-	{
-		if(strcmp( key, e->key) == 0)
-			return e;
-        e = e->next;
-	}
-	return NULL;
-}
-
 void hmap_put(struct hmap *mp, char *key, void * value)
 {
     int key_len = strlen(key);
@@ -150,7 +125,7 @@ void hmap_put(struct hmap *mp, char *key, void * value)
     mp->size++;
 }
 
-int hmap_put_wcb(struct hmap *mp, char *key, void *value, int bsize, hfrcb fr)
+int hmap_put_wcb(struct hmap *mp, char *key, void *value, hfrcb fr)
 {
     if (fr == NULL)
         return 0;
@@ -162,9 +137,8 @@ int hmap_put_wcb(struct hmap *mp, char *key, void *value, int bsize, hfrcb fr)
 	struct hmap_e *e  = hmap_get_e(mp, key);
 	if (e != NULL)
 	{   
-        *(mp->khsizes[hash]) -= (*fr)(e->value);
+        (*fr)(e->value);
         e->value = value;
-        *(mp->khsizes[hash]) += bsize;
 		return 1;
 	}
     //没有放入，则添加
@@ -172,12 +146,11 @@ int hmap_put_wcb(struct hmap *mp, char *key, void *value, int bsize, hfrcb fr)
     //把新元素放到每个key队列的头部
     e->next = mp->em[hash];
     mp->em[hash] = e;
-    *(mp->khsizes[hash]) += bsize;
     mp->size++;
     return 1;
 }
 
-void *hmap_get(struct hmap *mp, char *key)
+struct hmap_e *hmap_get_e(struct hmap *mp, char *key)
 {
 	int key_len = strlen(key);
 	assert(key && key_len>0);
@@ -185,8 +158,39 @@ void *hmap_get(struct hmap *mp, char *key)
 	struct hmap_e *e = mp->em[hash];
 	while (e)
 	{
-		if(strcmp(key, e->key) == 0)
-			return e->value;
+		if(strcmp( key, e->key) == 0)
+			return e;
+        e = e->next;
+	}
+	return NULL;
+}
+
+void *hmap_get(struct hmap *mp, char *key)
+{   
+    struct hmap_e *e = hmap_get_e(mp, key);
+    if (e != NULL)
+        return e->value;
+	return NULL;
+}
+
+//删除目标key的节点
+struct hmap_e *hmap_del(struct hmap *mp, char *key)
+{
+	int key_len = strlen(key);
+	assert(key && key_len>0);
+	long hash = hash_string(key,key_len) % (mp->hsize);
+	struct hmap_e *e = mp->em[hash];
+    struct hmap_e *pre = hmap_e_create(NULL,NULL);
+    pre->next = e;
+	while (e)
+	{
+		if(strcmp(key, e->key) == 0){
+            pre->next = e->next;
+            mp->size--;
+            e->next = NULL;
+            return e;
+        }
+        pre = e;
         e = e->next;
 	}
 	return NULL;

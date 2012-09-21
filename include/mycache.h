@@ -18,6 +18,12 @@
 #include "common.h"
 #include "list.h"
 #include "hashmap.h"
+
+#ifndef mycache_def_flag
+//在cache kick out的时候计算kickout元素所占空间的大小
+typedef int (*caccb)(void *);
+
+#endif
 struct mycache{
     struct hmap *mp;//保存key value实体的缓存
     struct list *hotlist;//保存各个key热度顺序的list，用于写入文件
@@ -33,6 +39,6 @@ extern int cache_put(struct mycache *cache, char *key, void *value, int size, hf
 
 extern void *cache_get(struct mycache *cache, char *key);
 
-extern int cache_wtoD(struct mycache *cache, char *path, float fra);
+extern struct list *cache_kickout(struct mycache *cache, char *path, float fra, caccb cac);
 
 void hotthekey(struct mycache *cache, char *key);

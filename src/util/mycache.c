@@ -35,9 +35,10 @@ void cache_destroy(struct mycache *cache, hfrcb hfr){
 int cache_put(struct mycache *cache, char *key, void *value,int size, hfrcb fr){
     if (cache->bsize + size >= cache->limsize)
         return -1;
-    hmap_put_wcb(cache->mp, key, value, size, fr);
-    hotthekey(cache, key); 
-    cache->bsize += size;
+    hmap_put_wcb(cache->mp, key, value, fr);
+    hotthekey(cache, key);
+    //bsize 的计算包括放到cache里存放到map里，和hotkeylist的开销
+    cache->bsize += size + strlen(key) * 2  + sizeof(struct hmap_e *) + sizeof(struct list_e *);
     return size;
 }
 
@@ -77,15 +78,32 @@ void *cache_get(struct mycache *cache, char *key){
     return result;
 }
 
-int cache_wtoD(struct mycache *cache, char *path, float fra){
-    return 0;
+struct list *cache_kickout(struct mycache *cache, char *path, float fra, caccb cac){
+    int kosize = cache->bsize * fra;
+    int count = 0;
+    struct list_e *e = cache->hotlist->head;
+    struct list *list = list_create();
+    while (e){
+        if (count >= kosize)
+            break;
+        struct hmap_e *he = hmap_del(cache->mp, (char *)e->data);
+        struct list_e *le = listnode_create(he->value);
+        list_add(list, le);
+        cache->hotlist->head = cache->hotlist->head->next;
+        free(e->data);
+        free(e);
+        count += (*cac)(he->value) + strlen(he->key)*2 + sizeof(struct hmap_e *) + sizeof(struct list_e *);
+        e = cache->hotlist->head;
+    }
+    cache->bsize -= count;
+    return list;
 }
 
 int cmain()
 {
     printf("hello world ,I am hp cache\n");
     while(1){
-        struct mycache *cache = cache_create(10000,4000000);
+        struct mycache *cache = cache_create(10000,4);
         cache_destroy(cache,NULL);
     }
     getchar();

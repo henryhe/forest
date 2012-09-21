@@ -29,8 +29,8 @@ int saveindex(struct list *list, char *path){
     struct list_e *e = list->head;
     while (e) {
         struct indexR *r = (struct indexR *)e->data;
-        memcpy(flag, r->key,FKEY_SIZE);
-        flag += FKEY_SIZE;
+        memcpy(flag, r->key,FKEY_LENGTH);
+        flag += FKEY_LENGTH;
         memcpy(flag, &(r->filename),sizeof(int));
         flag += sizeof(int);
         memcpy(flag, &(r->offset),sizeof(int));
@@ -66,9 +66,9 @@ void datatoindex(struct index *index, void *data, long dsize){
     void *pos = data;
     while (sizeflag < indexRsize * readRnum){
         struct indexR *r = (struct indexR *)malloc(sizeof(struct indexR));
-        char *key = createstr(pos, pos + FKEY_SIZE);
+        char *key = createstr(pos, pos + FKEY_LENGTH);
         r->key = key;
-        pos += FKEY_SIZE;
+        pos += FKEY_LENGTH;
         int size = sizeof(int);
         memcpy(&(r->filename), pos, size);
         pos += size;
@@ -190,8 +190,6 @@ char *getfilepath(char *flrpath, int filename){
  */
 void *expanddata(int length, void *data){
     int size = sizeof(data);
-    if (length == size)
-        return data;
     void *res = malloc(length);
     memcpy(res, data, size);
     void *pos = res + size;
@@ -224,7 +222,7 @@ struct fR *flr_read(char *flrpath, struct index *index, char *key){
     while (size < ir->filename){
         if (*(char *)pos == flrtail){
             void *re = malloc(size + 1);
-            memcpy(re, raw + FKEY_SIZE, size + 1);
+            memcpy(re, raw + FKEY_LENGTH, size + 1);
             free(raw);
             return re;
         }
@@ -241,7 +239,7 @@ struct fR *flr_read(char *flrpath, struct index *index, char *key){
  * output   ：包含key和data域的fR结构
  */
 int flr_write(char *flrpath, struct index *index, char *key, void *data){
-    int size = sizeof(data);
+    int size = sizeof(data) + 1;//+1是因为还有一个标志状态的字节会被加入
     struct list_e *tar  = locatekey(key, index);
     char *tarkey = ((struct indexR *)(tar->data))->key;
     int filename = getfilename(size);
@@ -305,8 +303,8 @@ int fmain(){
     index.size = 0;
     for(i = 0; i < readRnum; i++){
         struct indexR *r = (struct indexR *)malloc(sizeof(struct indexR));
-        char *key = (char *)malloc(FKEY_SIZE);
-        memcpy(key,"460.0.123.3",FKEY_SIZE);
+        char *key = (char *)malloc(FKEY_LENGTH);
+        memcpy(key,"460.0.123.3",FKEY_LENGTH);
         r->key = key;
         r->filename = 51200000;
         r->offset = 10241024;

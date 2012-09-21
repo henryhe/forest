@@ -10,7 +10,7 @@
 #define RECORD_SIZE 80//一条记录的长度
 #define RECORD_LIM 30000000//同时在内存的入基站，wifi信息的上限
 
-static int rdatasize = sizeof(long) + sizeof(double) * 3 + sizeof(int);//一个key对应的每条位置信息的大小
+static int rdatasize = sizeof(long) + sizeof(float) * 3 + sizeof(int);//一个key对应的每条位置信息的大小
 
 struct log
 {//一条log的结构
@@ -36,7 +36,7 @@ struct record
 struct pdata 
 {//一条位置信息
 	long time;//提交时间
-	double x,y,p;//此条日志提交的gps坐标，和精度
+	float x,y,p;//此条日志提交的gps坐标，和精度
 	int type;//类型，wifi为0，主基站为1，其他基站为2
     double pro;//正确度，保留字段
 };
