@@ -18,6 +18,7 @@
 #include "common.h"
 #include "list.h"
 #include "myUtil.h"
+
 #ifndef flrfs_include_flag
 
 #define indexRsize 20
@@ -52,17 +53,20 @@ struct indexR{
 struct index{
     char *path;
     struct list *list;
-    long size;
+    long bsize;
 };
 
 struct fR{
     char *key;
-    void *data;
+    int bsize;//data的大小
+    void *data;//除去key的有效内容
 };
 
-static int fnames[FILENUM] = {128, 256, 512, 1024, 2048,4096};
+static int fnames[FILENUM] = {128, 256, 512, 1024, 2048, 4096};
 
-extern int saveindex(struct list *index,char *path);
+static short IRSIZE = sizeof(int) * 2 + sizeof(char) + FKEY_LENGTH;
+
+extern int saveindex(struct index *index);
 
 extern struct index *loadindex(char *path);
 
@@ -75,12 +79,18 @@ extern struct list_e *locatekey(char *key, struct index *index);
  */
 extern struct fR *flr_read(char *path, struct index *index, char *key);
 
-extern int flr_write(char *path, struct index *index, char *key, void *data);
+extern int flr_write(char *path, struct index *index, char *key, struct fR *fr);
 
-struct index *createindex();
+struct index *createindex(char *path);
 
 void datatoindex(struct index *index, void *data, long dsize);
 
 extern int getfilename(int size);
 
 extern void addtoindex(struct list_e *pre, struct indexR *r);
+
+extern int freefR(void *t);
+
+extern int freeiR(void *t);
+
+extern void destroyindex(struct index *index, lfrcb fr);

@@ -24,7 +24,6 @@ int freeR(void *t)
         free(r->key);
     if (r->e != NULL)
         free(r->e);
-    free(r->e);
     free(r);
     return 1;
 }
@@ -32,6 +31,7 @@ int freeR(void *t)
 int freeP(void *t){
     struct pdata *p = (struct pdata *)t;
     free(p);
+    return 1;
 }
 
 /* 

@@ -1,5 +1,5 @@
 prodata: prodata.o mycache.o locate.o hashmap.o list.o myUtil.o flrfs.o log.o config.o
-	gcc -o build/prodata build/mycache.o build/locate.o build/prodata.o build/hashmap.o build/list.o build/myUtil.o build/flrfs.o build/log.o build/config.o
+	gcc -g -o build/prodata build/mycache.o build/locate.o build/prodata.o build/hashmap.o build/list.o build/myUtil.o build/flrfs.o build/log.o build/config.o
 
 prodata.o: src/prodata.c include/locate.h
 	gcc -o build/prodata.o -c src/prodata.c

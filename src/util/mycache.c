@@ -22,6 +22,7 @@ struct mycache *cache_create(int hsize, long limsize){
     cache->mp = hmap_create_ws(hsize);
     cache->hotlist = list_create();
     cache->limsize = limsize * 1024 * 1024 * 1024;
+   // cache->limsize = limsize;
     cache->bsize = 0;
     return cache;
 }
@@ -61,7 +62,7 @@ void hotthekey(struct mycache *cache, char *key){
         pre = pre->next;
     }
     if (index < 0 || pre->next == NULL){//hotlist中没有要放入key的情况
-        char *newkey = (char *)malloc(strlen(key));
+        char *newkey = (char *)malloc(strlen(key) + 1);
         strcpy(newkey, key);
         struct list_e *e = listnode_create(newkey);
         list_add(cache->hotlist, e);
@@ -79,6 +80,7 @@ void *cache_get(struct mycache *cache, char *key){
 }
 
 struct list *cache_kickout(struct mycache *cache, char *path, float fra, caccb cac){
+    hmap_print(cache->mp);
     int kosize = cache->bsize * fra;
     int count = 0;
     struct list_e *e = cache->hotlist->head;
@@ -92,6 +94,8 @@ struct list *cache_kickout(struct mycache *cache, char *path, float fra, caccb c
         cache->hotlist->head = cache->hotlist->head->next;
         free(e->data);
         free(e);
+        free(he->key);
+        free(he);
         count += (*cac)(he->value) + strlen(he->key)*2 + sizeof(struct hmap_e *) + sizeof(struct list_e *);
         e = cache->hotlist->head;
     }

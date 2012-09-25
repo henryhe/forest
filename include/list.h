@@ -17,7 +17,7 @@ struct list{
     struct list_e *head;
     struct list_e *tail;
 };
-typedef void (*lfrcb)(void *);
+typedef int (*lfrcb)(void *);
 # endif
 
 extern struct list* list_create();

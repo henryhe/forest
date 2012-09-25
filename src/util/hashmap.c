@@ -37,8 +37,8 @@ struct hmap *hmap_create_ws(int hsize)
 
 void hmap_print(struct hmap *mp)
 {
-	printf("to print :\n");
-	printf("map size :%d ", (int)mp->size);
+	printf("to print :");
+	printf("map size :%d \n", (int)mp->size);
     int i;
 	for(i = 0; i < mp->hsize; i++)
 	{
@@ -65,9 +65,9 @@ void hmap_destroy(struct hmap *mp, hfrcb fr)
 }
 
 //释放每个key下的element
-int hmap_key_destroy(struct hmap_e *key, hfrcb fr)
+int hmap_key_destroy(struct hmap_e *e, hfrcb fr)
 {
-	struct hmap_e *pos = key;
+	struct hmap_e *pos = e;
 	struct hmap_e *next = pos;
 	int count = 0;//计数器：返回free的元素个数
 	while (pos)
@@ -127,6 +127,7 @@ void hmap_put(struct hmap *mp, char *key, void * value)
 
 int hmap_put_wcb(struct hmap *mp, char *key, void *value, hfrcb fr)
 {
+//    hmap_print(mp);
     if (fr == NULL)
         return 0;
     int key_len = strlen(key);
@@ -147,6 +148,7 @@ int hmap_put_wcb(struct hmap *mp, char *key, void *value, hfrcb fr)
     e->next = mp->em[hash];
     mp->em[hash] = e;
     mp->size++;
+  //  hmap_print(mp);
     return 1;
 }
 
@@ -188,11 +190,16 @@ struct hmap_e *hmap_del(struct hmap *mp, char *key)
             pre->next = e->next;
             mp->size--;
             e->next = NULL;
+            free(pre);
+            //如果此槽中只剩下一个元素，pre的方式会不能删除掉
+            if (mp->em[hash] == e)
+                mp->em[hash] = NULL;
             return e;
         }
         pre = e;
         e = e->next;
 	}
+    free(pre);
 	return NULL;
 }
 
