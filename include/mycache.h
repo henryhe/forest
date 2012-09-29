@@ -39,6 +39,8 @@ extern int cache_put(struct mycache *cache, char *key, void *value, int size, hf
 
 extern void *cache_get(struct mycache *cache, char *key);
 
-extern struct list *cache_kickout(struct mycache *cache, char *path, float fra, caccb cac);
+extern struct list *cache_kickout(struct mycache *cache, float fra, caccb cac);
 
 void hotthekey(struct mycache *cache, char *key);
+
+extern struct list *cache_valuelist(struct mycache *cache);

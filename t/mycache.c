@@ -1,12 +1,12 @@
 /*
  * =====================================================================================
  *
- *       Filename:  log.c
+ *       Filename:  mycache.c
  *
- *    Description:  用于输出日志
+ *    Description:  测试mycache.c
  *
  *        Version:  1.0
- *        Created:  2012年09月06日 11时44分50秒
+ *        Created:  2012年09月29日 17时57分50秒
  *       Revision:  none
  *       Compiler:  gcc
  *
@@ -15,12 +15,15 @@
  *
  * =====================================================================================
  */
-#include "../../include/log.h"
+#include "../include/mycache.h"
 
-void log_info(char *s){
-    printf("%s [INFO] : %s\n",getnowtime(), s);
+int main()
+{
+    printf("hello world ,I am hp cache\n");
+    while(1){
+        struct mycache *cache = cache_create(10000,4);
+        cache_destroy(cache,NULL);
+    }
+    getchar();
 }
 
-void log_error(char *s){
-    printf("%s [ERROR] : %s\n",getnowtime(), s);
-}

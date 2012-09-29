@@ -36,7 +36,7 @@ struct record *stoR(char *str){
     struct record *r = (struct record *)malloc(sizeof(struct record));
     //field state：读入字段的顺序
     int fs = 0;
-    while (TRUE){
+    while (1){
         if (*end == '\0'){
             char *s = createstr(start, end);
             r->e = s;
@@ -153,7 +153,8 @@ struct keydata *toKD(char *key, struct fR *fr){
         return NULL;
     }
     struct keydata *kd = (struct keydata *)malloc(sizeof(struct keydata));
-    kd->key = fr->key;
+    kd->key = (char *)malloc(strlen(kd->key) + 1);
+    strcpy(kd->key, fr->key);
     int rnum =  kd->bsize / rdatasize;
     kd->list = list_create();
     void *pos = fr->data;
@@ -222,6 +223,7 @@ struct keydata *getKD(char *flrpath, struct index *index, struct record *r, stru
     struct fR *fr = readKD(flrpath,index, r);
     if (fr != NULL){
         struct keydata *kd = toKD(r->key, fr);
+        freefR(fr);
         if (kd == NULL)
             return createKD(r);
         return mergeKD(kd, r, cache);
@@ -306,33 +308,36 @@ int sizeofK(void *t){
     return strlen(k->key) + sizeof(k->bsize) + k->list->size * sizeof(struct pdata);
 }
 
+void cache_wtoflr(struct mycache *cache, struct index *index, char *path) {
+    struct list *list = cache_valuelist(cache);
+    writetoflr(path, index, list);
+}
+
 
 struct mycache *prodata()
 {
     char *line = (char *)malloc(READ_BUFFER_SIZE);
-    struct mycache *cache = cache_create(1024,128);
+    struct mycache *cache = cache_create(10240,1);
     struct config *config = loadconfig();
     char *indexpath = mystrcat(config->flrpath, "index");
     struct index *index = loadindex(indexpath);
-    FILE *f = fopen("test","r");
     struct record *r = NULL;
-    while (fgets(line, READ_BUFFER_SIZE, f) != NULL)
-//    while (fgets(line, READ_BUFFER_SIZE, stdin) != NULL)
-    {
-//        printf("%s",line);
+    FILE *fp = fopen("case", "r");
+    //while (fgets(line, READ_BUFFER_SIZE, stdin) != NULL)
+    while (fgets(line, READ_BUFFER_SIZE, fp) != NULL) {
+        printf("%s",line);
         r = stoR(line);
         if (r == NULL)
             continue;
-        printRp(r);
         struct keydata *kd = (struct keydata *)cache_get(cache, r->key);
         if (kd == NULL){
             kd = getKD(config->flrpath, index, r, cache);
             char *key = (char *)malloc(strlen(kd->key) + 1);
             strcpy(key, kd->key);
-            if(cache_put(cache, key, kd, kd->bsize,freeKD) == -1){
-                struct list *temp = cache_kickout(cache, config->flrpath, 0.5, sizeofK);
-                writetoflr(config->flrpath, index, temp);
-                list_destroy(temp, freeKD);
+            if (cache_put(cache, key, kd, kd->bsize,freeKD) == -1) {
+                cache_wtoflr(cache, index, config->flrpath);
+                saveindex(index);
+                cache_clear(cache, freeKD);
                 cache_put(cache, key, kd, kd->bsize, freeKD); 
             }
         }else{
@@ -340,18 +345,19 @@ struct mycache *prodata()
         }
         freeR(r);
     }
-    free(line);
+    fclose(fp);
+    cache_wtoflr(cache, index, config->flrpath);
+    cache_clear(cache, freeKD);
     saveindex(index);
     destroyindex(index, freeiR);
-    fclose(f);
     config_destroy(config);
+    free(line);
     return cache;
 }
 
 int main()
 {   
-    struct mycache *cache = prodata(); 
-    cache_destroy(cache,freeKD);
-    return 1;
+    struct mycache *cache = prodata();
+
 }
 

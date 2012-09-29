@@ -140,26 +140,3 @@ void list_totail(struct list *list,struct list_e *pre, struct list_e *e){
     e->next = NULL;
 }
 
-
-void ltestfree(void *data)
-{
-    free(data);
-}
-
-int lmain(){
-	while(1){
-		struct list* list = list_create();
-		int i;
-		for( i = 0; i < 10; i++)
-		{
-			char *p = (char *) malloc(10);
-			strcpy(p,"123456789\0");
-			struct list_e *e = listnode_create(p);
-			list_add(list, e);
-		}
-		list_print(list);
-		list_destroy(list, NULL);
-	}
-
-
-}

@@ -19,7 +19,7 @@
 
 struct config *loadconfig(){
     char *path = (char *)malloc(17);
-    memcpy(path, "../config/config\0" ,17);
+    memcpy(path, "../config/config\0", 17);
     char *line = (char *)malloc(1024);
     FILE *f = fopen(path, "r");
     struct config *config = (struct config *)malloc(sizeof(struct config));

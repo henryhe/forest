@@ -1,3 +1,11 @@
+all: parselog prodata
+
+parselog: parselog.o locate.o hashmap.o list.o myUtil.o
+	gcc -o build/parselog build/locate.o build/parselog.o build/hashmap.o build/list.o build/myUtil.o
+
+parselog.o: src/parselog.c include/locate.h
+	gcc -o build/parselog.o -c src/parselog.c
+
 prodata: prodata.o mycache.o locate.o hashmap.o list.o myUtil.o flrfs.o log.o config.o
 	gcc -g -o build/prodata build/mycache.o build/locate.o build/prodata.o build/hashmap.o build/list.o build/myUtil.o build/flrfs.o build/log.o build/config.o
 

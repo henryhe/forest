@@ -21,7 +21,7 @@
 
 #ifndef flrfs_include_flag
 
-#define indexRsize 20
+#define indexRsize 39
 
 #define readRnum 10
 

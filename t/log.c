@@ -3,10 +3,10 @@
  *
  *       Filename:  log.c
  *
- *    Description:  用于输出日志
+ *    Description:  测试log
  *
  *        Version:  1.0
- *        Created:  2012年09月06日 11时44分50秒
+ *        Created:  2012年09月29日 18时09分23秒
  *       Revision:  none
  *       Compiler:  gcc
  *
@@ -15,12 +15,11 @@
  *
  * =====================================================================================
  */
-#include "../../include/log.h"
+#include "../include/log.h"
 
-void log_info(char *s){
-    printf("%s [INFO] : %s\n",getnowtime(), s);
-}
+void main()
+{
+    printf("hp log\n");
+    log_info("hahahah\n"); 
+} 
 
-void log_error(char *s){
-    printf("%s [ERROR] : %s\n",getnowtime(), s);
-}

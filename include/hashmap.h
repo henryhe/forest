@@ -44,3 +44,7 @@ extern void *hmap_get(struct hmap *mp, char *key);
 extern struct hmap_e  *hmap_get_e(struct hmap *mp, char *key);
 
 extern struct hmap_e *hmap_del(struct hmap *mp, char *key);
+
+extern void printHsize(struct hmap *mp);
+
+extern struct list *hmap_valuelist(struct hmap *mp);

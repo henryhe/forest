@@ -90,9 +90,9 @@ static long hash_string(const char *key, int len)
 	long h = 0;
 	int i,off = 0;
 	for(i = 0; i < len; i++)
-		h = 31*h + key[off++];
+		h = 33*h + key[off++];
 	if(h < 0) 
-		h = 0; 
+		h *= -1;
 	return h;
 }
 
@@ -160,7 +160,7 @@ struct hmap_e *hmap_get_e(struct hmap *mp, char *key)
 	struct hmap_e *e = mp->em[hash];
 	while (e)
 	{
-		if(strcmp( key, e->key) == 0)
+		if(strcmp(key, e->key) == 0)
 			return e;
         e = e->next;
 	}
@@ -174,7 +174,25 @@ void *hmap_get(struct hmap *mp, char *key)
         return e->value;
 	return NULL;
 }
-
+/* function : 返回所有value组成的list,返回的value并没有复制，所以无需在外部
+ *            释放
+ * input    : hmap
+ * output   : 所有value组成的list
+ */
+struct list *hmap_valuelist(struct hmap *mp) {
+    struct list *list = list_create();
+    int i;
+    for (i = 0; i < mp->hsize; i++) {
+        struct hmap_e *e = mp->em[i];
+        while (e) {
+            void *v = e->value;
+            struct list_e *n = listnode_create(v);
+            list_add(list, n);
+            e = e->next;
+        }
+    } 
+    return list;
+}
 //删除目标key的节点
 struct hmap_e *hmap_del(struct hmap *mp, char *key)
 {
@@ -203,31 +221,20 @@ struct hmap_e *hmap_del(struct hmap *mp, char *key)
 	return NULL;
 }
 
-int ftestfree(void *data){
-    free(data);
-    return 0;
-}
-
-
-void hmain(){
-	while(1)
-	{
-		struct hmap *mp = hmap_create_ws(1024);
-		int i;
-		for (i = 0; i < 10; i++)
-		{
-			char *p = (char *)malloc(2);
-			sprintf(p,"%d",i);
-			printf("p:%s\n",p);
-			char *q = (char *)malloc(8);
-			strcpy(q,"abcdefg\0");
-//			free(p);
-//			free(q);
-			hmap_put(mp, p, q);
-			hmap_print(mp);
-		}
-		hmap_destroy(mp,ftestfree);
-//		hmap_destroy_cb(mp,test_free);
-	}
+void printHsize(struct hmap *mp){
+   int i;
+   for (i = 0; i < mp->hsize; i++){
+       if (mp->em[i] == NULL)
+           continue;
+       struct hmap_e *e = mp->em[i];
+       int count = 0;
+       while (e){
+           count++;
+           e=e->next;
+       }
+       printf("em[%d]:%d  ", i, count);
+       if (i % 50 == 0)
+           printf("\n");
+   } 
 }
 

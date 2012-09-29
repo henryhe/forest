@@ -40,7 +40,7 @@ int saveindex(struct index *index){
         exit(0);
     }
     
-    void *data = malloc(index->bsize);    
+    void *data = malloc(index->list->size * indexRsize);    
     void *flag = data; 
     long count = 0;
     struct list_e *e = index->list->head;
@@ -304,7 +304,8 @@ int flr_write(char *flrpath, struct index *index, char *key, struct fR *fr){
     if (tar == NULL || strcmp(((struct indexR *)(tar->data))->key, key) != 0){
         //创建新的index节点
         struct indexR *ir = (struct indexR *)malloc(sizeof(struct indexR));
-        ir->key = key;
+        ir->key = (char *)malloc(strlen(key) + 1);
+        strcpy(ir->key, key);
         ir->filename = filename;
         ir->flag = AVAI;
         //写入文件系统
@@ -316,12 +317,14 @@ int flr_write(char *flrpath, struct index *index, char *key, struct fR *fr){
         struct list_e *e = listnode_create(ir);
         if (tar == NULL){
             list_add(index->list, e);
-            index->bsize += IRSIZE;
         }else{
+            //TODO 下边为list内部操作，待封装
             struct list_e *n = tar->next;
             tar->next = e;
-            e->next = n;      
+            e->next = n;
+            index->list->size++;
         }
+        index->bsize += IRSIZE;
     }else{
         struct indexR *ir = (struct indexR *)tar->data;
         //更新index
